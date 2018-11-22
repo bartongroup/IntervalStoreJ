@@ -200,16 +200,18 @@ public class IntervalStore<T extends IntervalI>
     {
       IntervalI i1 = nonNested.get(i);
       IntervalI i2 = nonNested.get(i + 1);
+
       if (i2.getBegin() < i1.getBegin())
       {
-        System.err.println("nonNested wrong order : " + i1.toString() + ", "
-                + i2.toString());
+        System.err.println("nonNested wrong start order : " + i1.toString()
+                + ", " + i2.toString());
         return false;
       }
-      if (i2.getEnd() < i1.getEnd() || (i2.getBegin() > i2.getBegin()
-              && i1.getEnd() == i2.getEnd()))
+      if (i1.properlyContainsInterval(i2)
+              || i2.properlyContainsInterval(i1))
       {
-        System.err.println("nonNested contains nested!: " + i1.toString()
+        System.err.println("nonNested invalid containment!: "
+                + i1.toString()
                 + ", " + i2.toString());
         return false;
       }
@@ -229,7 +231,7 @@ public class IntervalStore<T extends IntervalI>
   }
 
   @Override
-  public boolean remove(Object o)
+  public synchronized boolean remove(Object o)
   {
     try
     {
@@ -239,7 +241,7 @@ public class IntervalStore<T extends IntervalI>
       /*
        * try the non-nested positional intervals first
        */
-      boolean removed = nonNested.remove(entry);
+      boolean removed = removeNonNested(entry);
 
       /*
        * if not found, try nested intervals
@@ -256,9 +258,52 @@ public class IntervalStore<T extends IntervalI>
     }
   }
 
+  /**
+   * Removes the given entry from the list of non-nested entries, returning true
+   * if found and removed, or false if not found (by object equality)
+   * 
+   * @param entry
+   * @return
+   */
+  protected boolean removeNonNested(T entry)
+  {
+    /*
+     * find the first interval that might overlap, i.e. whose 
+     * end position is after the target range start
+     */
+    int startIndex = BinarySearcher.binarySearch(nonNested,
+            BinarySearcher.byEnd(entry.getBegin()));
+
+    /*
+     * traverse intervals (if any) that do not start 
+     * after the target range
+     */
+    int to = entry.getEnd();
+    int i = startIndex;
+    while (i < nonNested.size())
+    {
+      T sf = nonNested.get(i);
+      if (sf.getBegin() > to)
+      {
+        break;
+      }
+      if (sf.equals(entry))
+      {
+        nonNested.remove(i);
+        return true;
+      }
+      i++;
+    }
+    return false;
+  }
+
   @Override
   public int getDepth()
   {
+    if (size() == 0)
+    {
+      return 0;
+    }
     return 1 + (nested == null ? 0 : nested.getDepth());
   }
 

@@ -445,11 +445,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      */
     int candidateIndex = findFirstOverlap(from);
 
-    // if (candidateIndex == -1)
-    // {
-    // return;
-    // }
-
     for (int i = candidateIndex; i < subranges.size(); i++)
     {
       NCNode<T> candidate = subranges.get(i);
@@ -621,8 +616,9 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     return size;
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#getEntries()
+  /**
+   * Answers a list of all entries stored, in no guaranteed order. This method
+   * is not synchronized, so is not thread-safe.
    */
   public List<T> getEntries()
   {
@@ -659,13 +655,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
       return false;
     }
     int i = findFirstOverlap(entry.getBegin());
-    // if (i == -1)
-    // {
-    // /*
-    // * it's not here!
-    // */
-    // return false;
-    // }
 
     for (; i < subranges.size(); i++)
     {

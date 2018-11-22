@@ -2,6 +2,8 @@ package nclist.impl;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -15,42 +17,55 @@ public class IntervalStoreTest
 {
 
   @Test(groups = "Functional")
-  public void testFindFeatures_nonNested()
+  public void testFindOverlaps_nonNested()
   {
     IntervalStore<SimpleFeature> store = new IntervalStore<>();
-    store.add(new SimpleFeature(10, 20, ""));
+    SimpleFeature sf1 = add(store, 10, 20);
     // same range different description
-    store.add(new SimpleFeature(10, 20, "desc"));
-    store.add(new SimpleFeature(15, 25, ""));
-    store.add(new SimpleFeature(20, 35, ""));
+    SimpleFeature sf2 = new SimpleFeature(10, 20, "desc");
+    store.add(sf2);
+    SimpleFeature sf3 = add(store, 15, 25);
+    SimpleFeature sf4 = add(store, 20, 35);
 
+    assertTrue(store.isValid());
+    assertEquals(store.size(), 4);
+    assertNull(PA.getValue(store, "nested"));
     List<SimpleFeature> overlaps = store.findOverlaps(1, 9);
     assertTrue(overlaps.isEmpty());
 
     overlaps = store.findOverlaps(8, 10);
     assertEquals(overlaps.size(), 2);
-    assertEquals(overlaps.get(0).getEnd(), 20);
-    assertEquals(overlaps.get(1).getEnd(), 20);
+    assertTrue(overlaps.contains(sf1));
+    assertTrue(overlaps.contains(sf2));
 
     overlaps = store.findOverlaps(12, 16);
     assertEquals(overlaps.size(), 3);
-    assertEquals(overlaps.get(0).getEnd(), 20);
-    assertEquals(overlaps.get(1).getEnd(), 20);
-    assertEquals(overlaps.get(2).getEnd(), 25);
+    assertTrue(overlaps.contains(sf1));
+    assertTrue(overlaps.contains(sf2));
+    assertTrue(overlaps.contains(sf3));
 
     overlaps = store.findOverlaps(33, 33);
     assertEquals(overlaps.size(), 1);
-    assertEquals(overlaps.get(0).getEnd(), 35);
+    assertTrue(overlaps.contains(sf4));
+
+    /*
+     * ensure edge cases are covered
+     */
+    overlaps = store.findOverlaps(35, 40);
+    assertEquals(overlaps.size(), 1);
+    assertTrue(overlaps.contains(sf4));
+    assertTrue(store.findOverlaps(36, 100).isEmpty());
+    assertTrue(store.findOverlaps(1, 9).isEmpty());
   }
 
   @Test(groups = "Functional")
-  public void testFindFeatures_nested()
+  public void testFindOverlaps_nested()
   {
     IntervalStore<SimpleFeature> store = new IntervalStore<>();
     SimpleFeature sf1 = add(store, 10, 50);
     SimpleFeature sf2 = add(store, 10, 40);
     SimpleFeature sf3 = add(store, 20, 30);
-    // fudge feature at same location but different description (so is added)
+    // feature at same location but different description
     SimpleFeature sf4 = new SimpleFeature(20, 30, "different desc");
     store.add(sf4);
     SimpleFeature sf5 = add(store, 35, 36);
@@ -82,7 +97,7 @@ public class IntervalStoreTest
   }
 
   @Test(groups = "Functional")
-  public void testFindFeatures_mixed()
+  public void testFindOverlaps_mixed()
   {
     IntervalStore<SimpleFeature> store = new IntervalStore<>();
     SimpleFeature sf1 = add(store, 10, 50);
@@ -193,6 +208,8 @@ public class IntervalStoreTest
     SimpleFeature sf1 = add(store, 10, 20);
     assertTrue(store.contains(sf1));
 
+    assertFalse(store.remove("what is this?"));
+
     /*
      * simple deletion
      */
@@ -200,8 +217,11 @@ public class IntervalStoreTest
     assertTrue(store.isEmpty());
 
     SimpleFeature sf2 = add(store, 0, 0);
+    SimpleFeature sf2a = add(store, 30, 40);
     assertTrue(store.contains(sf2));
+    assertFalse(store.remove(sf1));
     assertTrue(store.remove(sf2));
+    assertTrue(store.remove(sf2a));
     assertTrue(store.isEmpty());
 
     /*
@@ -330,6 +350,7 @@ public class IntervalStoreTest
     assertFalse(store.listContains(null, null));
     List<SimpleFeature> features = new ArrayList<>();
     assertFalse(store.listContains(features, null));
+    assertFalse(store.listContains(features, "wossis?"));
 
     SimpleFeature sf1 = new SimpleFeature(20, 30, "desc1");
     assertFalse(store.listContains(null, sf1));
@@ -338,10 +359,12 @@ public class IntervalStoreTest
     features.add(sf1);
     SimpleFeature sf2 = new SimpleFeature(20, 30, "desc1");
     SimpleFeature sf3 = new SimpleFeature(20, 40, "desc1");
+    SimpleFeature sf4 = new SimpleFeature(0, 10, "desc1");
 
     // sf2.equals(sf1) so contains should return true
     assertTrue(store.listContains(features, sf2));
     assertFalse(store.listContains(features, sf3));
+    assertFalse(store.listContains(features, sf4));
   }
 
   @Test(groups = "Functional")
@@ -424,5 +447,94 @@ public class IntervalStoreTest
     add(store, 24, 26);
     assertEquals(store.toString(),
             "[20:30:desc, 25:35:desc]\n[22:28:desc [24:26:desc], 22:28:desc]");
+  }
+
+  @Test(groups = "Functional")
+  public void testPrettyPrint()
+  {
+    IntervalStore<SimpleFeature> store = new IntervalStore<>();
+    assertEquals(store.prettyPrint(), "[]");
+    add(store, 20, 30);
+    assertEquals(store.prettyPrint(), "[20:30:desc]");
+    add(store, 25, 35);
+    assertEquals(store.prettyPrint(), "[20:30:desc, 25:35:desc]");
+    add(store, 22, 28);
+    add(store, 22, 28);
+    add(store, 24, 26);
+    assertEquals(store.prettyPrint(),
+            "[20:30:desc, 25:35:desc]\n22:28:desc\n  24:26:desc\n22:28:desc\n");
+  }
+
+  @Test(groups = "Functional")
+  public void testIsValid()
+  {
+    IntervalStore<Range> store = new IntervalStore<>();
+    assertTrue(store.isValid());
+    Range r1 = new Range(10, 30);
+    Range r2 = new Range(20, 40);
+    Range r3 = new Range(60, 70);
+    store.add(r1);
+    store.add(r2);
+    store.add(r3);
+    assertTrue(store.isValid());
+    assertNull(PA.getValue(store, "nested")); // all top level ranges so far
+
+    PA.setValue(r1, "start", 20);
+    assertFalse(store.isValid()); // r2 encloses preceding r1
+    PA.setValue(r1, "end", 40);
+    assertTrue(store.isValid()); // r1 and r2 coincide - this is ok
+    PA.setValue(r1, "end", 41);
+    assertFalse(store.isValid()); // r1 encloses following r2
+
+    // reset
+    PA.setValue(r1, "start", 10);
+    PA.setValue(r1, "end", 30);
+    assertTrue(store.isValid());
+
+    // make r3 precede r2 (without containment)
+    PA.setValue(r3, "start", 15);
+    PA.setValue(r3, "end", 35);
+    assertFalse(store.isValid());
+
+    // reset
+    PA.setValue(r3, "start", 60);
+    PA.setValue(r3, "end", 70);
+    assertTrue(store.isValid());
+
+    Range r4 = new Range(25, 28); // nested in r1
+    Range r5 = new Range(26, 27); // nested in r4
+    store.add(r4);
+    store.add(r5);
+    assertNotNull(PA.getValue(store, "nested"));
+
+    // break the nested NCList to show it is checked
+    PA.setValue(r5, "end", 29); // should no longer nest in r4!
+    assertFalse(store.isValid());
+  }
+
+  @Test(groups = "Functional")
+  public void testGetDepth()
+  {
+    IntervalStore<SimpleFeature> store = new IntervalStore<>();
+    assertEquals(store.getDepth(), 0);
+    add(store, 10, 20);
+    assertEquals(store.getDepth(), 1);
+    add(store, 15, 25); // non-nested
+    add(store, 30, 40); // non-nested
+    assertEquals(store.getDepth(), 1);
+    SimpleFeature sf3 = add(store, 32, 38); // nested
+    assertEquals(store.getDepth(), 2);
+    SimpleFeature sf1 = add(store, 33, 35); // nested in 30-40
+    assertEquals(store.getDepth(), 3);
+    SimpleFeature sf2 = add(store, 34, 37); // nested sibling
+    assertEquals(store.getDepth(), 3);
+    add(store, 35, 36); // nested in 34-37
+    assertEquals(store.getDepth(), 4);
+    store.remove(sf2); // 35-36 gets promoted
+    assertEquals(store.getDepth(), 3);
+    store.remove(sf1); // leaves sibling 35-36
+    assertEquals(store.getDepth(), 3);
+    store.remove(sf3); // 35-36 goes up one level
+    assertEquals(store.getDepth(), 2);
   }
 }

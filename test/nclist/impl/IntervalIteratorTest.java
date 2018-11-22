@@ -3,8 +3,10 @@ package nclist.impl;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.testng.annotations.Test;
 
@@ -17,6 +19,14 @@ public class IntervalIteratorTest
 
     Iterator<Range> it = store.iterator();
     assertFalse(it.hasNext());
+    try
+    {
+      it.next();
+      fail("expected exception");
+    } catch (NoSuchElementException e)
+    {
+      // expected
+    }
 
     Range range1 = new Range(11, 20);
     store.add(range1);

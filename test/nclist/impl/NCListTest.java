@@ -308,9 +308,11 @@ public class NCListTest
     assertTrue(ncl.isValid());
     Range r4 = new Range(43, 43);
     ncl.add(r4);
+    Range r5 = new Range(47, 49);
+    ncl.add(r5);
     assertTrue(ncl.isValid());
 
-    assertEquals(ncl.toString(), "[40-50 [42-44 [43-43], 46-48]]");
+    assertEquals(ncl.toString(), "[40-50 [42-44 [43-43], 46-48, 47-49]]");
     assertTrue(ncl.isValid());
 
     /*
@@ -324,8 +326,13 @@ public class NCListTest
     assertTrue(ncl.isValid());
 
     PA.setValue(r1, "start", 43);
-    assertFalse(ncl.isValid()); // r2 not inside r1
+    assertFalse(ncl.isValid()); // r2 not inside r1 (starts before)
     PA.setValue(r1, "start", 40);
+    assertTrue(ncl.isValid());
+
+    PA.setValue(r2, "end", 51);
+    assertFalse(ncl.isValid()); // r2 not inside r1 (ends after)
+    PA.setValue(r2, "end", 44);
     assertTrue(ncl.isValid());
 
     PA.setValue(r3, "start", 41);
@@ -340,6 +347,18 @@ public class NCListTest
 
     PA.setValue(r4, "start", 44);
     assertFalse(ncl.isValid()); // r4 has reverse range
+    PA.setValue(r4, "start", 43);
+    assertTrue(ncl.isValid());
+
+    PA.setValue(r3, "start", 47);
+    assertFalse(ncl.isValid()); // r3 enclosed by following r5
+    PA.setValue(r3, "start", 46);
+    assertTrue(ncl.isValid());
+
+    PA.setValue(r5, "end", 48);
+    assertFalse(ncl.isValid()); // r5 enclosed by preceding r3
+    PA.setValue(r5, "end", 49);
+
   }
 
   @Test(groups = "Functional")
@@ -819,5 +838,41 @@ public class NCListTest
     ncl.remove(new Range(30, 50));
     assertEquals(ncl.toString(), "[20-60 [25-40 [28-40 [32-40]], 40-50]]");
     assertTrue(ncl.isValid());
+  }
+
+  @Test(groups = "Functional")
+  public void testPush()
+  {
+    List<Range> ranges = new ArrayList<>();
+    addRange(ranges, 10, 20);
+    addRange(ranges, 15, 30);
+    addRange(ranges, 20, 40);
+    NCList<Range> ncl = new NCList<>(ranges);
+    assertTrue(ncl.isValid());
+    assertEquals(ncl.toString(), "[10-20, 15-30, 20-40]");
+
+    /*
+     * push 15-30, 20-40 inside new node 12-45
+     */
+    ncl.push(new NCNode<>(new Range(12, 45)), 1, 2);
+    assertEquals(ncl.toString(), "[10-20, 12-45 [15-30, 20-40]]");
+
+    /*
+     * push 10-20 inside new node 10-20
+     */
+    ncl.push(new NCNode<>(new Range(10, 20)), 0, 0);
+    assertEquals(ncl.toString(), "[10-20 [10-20], 12-45 [15-30, 20-40]]");
+
+    /*
+     * try to push 12-45 inside 13-45 - should fail
+     */
+    try
+    {
+      ncl.push(new NCNode<>(new Range(13, 45)), 1, 1);
+      fail("Expected exception");
+    } catch (IllegalArgumentException e)
+    {
+      // expected;
+    }
   }
 }
