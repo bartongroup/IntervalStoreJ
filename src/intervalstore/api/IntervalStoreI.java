@@ -1,4 +1,4 @@
-package nclist.api;
+package intervalstore.api;
 
 import java.util.Collection;
 import java.util.List;

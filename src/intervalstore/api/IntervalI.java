@@ -18,7 +18,7 @@
  * along with Jalview.  If not, see <http://www.gnu.org/licenses/>.
  * The Jalview Authors are detailed in the 'AUTHORS' file.
  */
-package nclist.api;
+package intervalstore.api;
 
 public interface IntervalI
 {

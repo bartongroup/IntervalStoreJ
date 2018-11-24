@@ -1,6 +1,6 @@
-package nclist.impl;
+package intervalstore.impl;
 
-import nclist.api.IntervalI;
+import intervalstore.api.IntervalI;
 
 /**
  * A simplified feature instance sufficient for unit test purposes.

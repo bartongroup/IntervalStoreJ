@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertTrue;
 
@@ -9,6 +9,9 @@ import java.util.Random;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import intervalstore.impl.NCList;
+import intervalstore.impl.Range;
 
 public class TimingTests
 {

@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -11,6 +11,8 @@ import java.util.List;
 
 import org.testng.annotations.Test;
 
+import intervalstore.impl.NCNode;
+import intervalstore.impl.Range;
 import junit.extensions.PA;
 
 public class NCNodeTest

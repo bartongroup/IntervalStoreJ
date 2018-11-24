@@ -18,13 +18,13 @@
  * along with Jalview.  If not, see <http://www.gnu.org/licenses/>.
  * The Jalview Authors are detailed in the 'AUTHORS' file.
  */
-package nclist.impl;
+package intervalstore.impl;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import nclist.api.IntervalI;
+import intervalstore.api.IntervalI;
 
 /**
  * Each node of the NCList tree consists of a range, and (optionally) the NCList

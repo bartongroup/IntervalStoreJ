@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertEquals;
 
@@ -6,17 +6,17 @@ import java.util.Comparator;
 
 import org.testng.annotations.Test;
 
-import nclist.api.IntervalI;
-import nclist.impl.Range;
-import nclist.impl.RangeComparator;
+import intervalstore.api.IntervalI;
+import intervalstore.impl.Range;
+import intervalstore.impl.NCListComparator;
 
-public class RangeComparatorTest
+public class NCListComparatorTest
 {
 
   @Test(groups = "Functional")
   public void testCompare()
   {
-    RangeComparator comp = new RangeComparator(true);
+    NCListComparator comp = new NCListComparator(true);
 
     // same position, same length
     assertEquals(comp.compare(10, 10, 20, 20), 0);
@@ -33,7 +33,7 @@ public class RangeComparatorTest
   @Test(groups = "Functional")
   public void testCompare_byStart()
   {
-    Comparator<IntervalI> comp = RangeComparator.BY_START_POSITION;
+    Comparator<IntervalI> comp = NCListComparator.BY_START_POSITION;
 
     // same start position, same length
     assertEquals(comp.compare(new Range(10, 20), new Range(10, 20)), 0);
@@ -50,7 +50,7 @@ public class RangeComparatorTest
   @Test(groups = "Functional")
   public void testCompare_byEnd()
   {
-    Comparator<IntervalI> comp = RangeComparator.BY_END_POSITION;
+    Comparator<IntervalI> comp = NCListComparator.BY_END_POSITION;
 
     // same end position, same length
     assertEquals(comp.compare(new Range(10, 20), new Range(10, 20)), 0);

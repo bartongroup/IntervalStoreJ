@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import java.util.AbstractCollection;
 import java.util.ArrayList;
@@ -6,8 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import nclist.api.IntervalI;
-import nclist.api.IntervalStoreI;
+import intervalstore.api.IntervalI;
+import intervalstore.api.IntervalStoreI;
 
 /**
  * A collection class to store interval-associated data, with O(log N)
@@ -135,13 +135,12 @@ public class IntervalStore<T extends IntervalI>
       /*
        * find the first stored interval which doesn't precede the new one
        */
-      int insertPosition = BinarySearcher.binarySearch(nonNested,
-              BinarySearcher.byInterval(entry,
-                      RangeComparator.BY_START_POSITION));
-
+      int insertPosition = BinarySearcher.findFirst(nonNested,
+              val -> val.getBegin() >= entry.getBegin());
       /*
-       * fail if we detect interval enclosure - of the new interval by
-       * the one preceding it, or of the next interval by the new one
+       * fail if we detect interval enclosure 
+       * - of the new interval by the one before or after it
+       * - of the next interval by the new one
        */
       if (insertPosition > 0)
       {
@@ -152,7 +151,9 @@ public class IntervalStore<T extends IntervalI>
       }
       if (insertPosition < nonNested.size())
       {
-        if (entry.properlyContainsInterval(nonNested.get(insertPosition)))
+        T following = nonNested.get(insertPosition);
+        if (entry.properlyContainsInterval(following)
+                || following.properlyContainsInterval(entry))
         {
           return false;
         }
@@ -260,7 +261,8 @@ public class IntervalStore<T extends IntervalI>
 
   /**
    * Removes the given entry from the list of non-nested entries, returning true
-   * if found and removed, or false if not found (by object equality)
+   * if found and removed, or false if not found. Specifically, removes the
+   * first item in the list for which <code>item.equals(entry)</code>.
    * 
    * @param entry
    * @return
@@ -268,19 +270,20 @@ public class IntervalStore<T extends IntervalI>
   protected boolean removeNonNested(T entry)
   {
     /*
-     * find the first interval that might overlap, i.e. whose 
-     * end position is after the target range start
+     * find the first interval that might match, i.e. whose 
+     * start position is not less than the target range start
+     * (NB inequality test ensures the first match if any is found)
      */
-    int startIndex = BinarySearcher.binarySearch(nonNested,
-            BinarySearcher.byEnd(entry.getBegin()));
+    int startIndex = BinarySearcher.findFirst(nonNested,
+            val -> val.getBegin() >= entry.getBegin());
 
     /*
-     * traverse intervals (if any) that do not start 
-     * after the target range
+     * traverse intervals to look for a match
      */
     int to = entry.getEnd();
     int i = startIndex;
-    while (i < nonNested.size())
+    int size = nonNested.size();
+    while (i < size)
     {
       T sf = nonNested.get(i);
       if (sf.getBegin() > to)
@@ -341,10 +344,8 @@ public class IntervalStore<T extends IntervalI>
     /*
      * locate the first entry in the list which does not precede the interval
      */
-    int pos = BinarySearcher.binarySearch(intervals, BinarySearcher
-            .byInterval(interval, RangeComparator.BY_START_POSITION));
-    // int pos = binarySearch(intervals,
-    // SearchCriterion.byStart(interval.getBegin()));
+    int pos = BinarySearcher.findFirst(intervals,
+            val -> val.getBegin() >= interval.getBegin());
     int len = intervals.size();
     while (pos < len)
     {
@@ -396,9 +397,9 @@ public class IntervalStore<T extends IntervalI>
      * find the first interval whose end position is
      * after the target range start
      */
-    int startIndex = BinarySearcher.binarySearch(nonNested,
-            BinarySearcher.byEnd(from));
-  
+    int startIndex = BinarySearcher.findFirst(nonNested,
+            val -> val.getEnd() >= from);
+
     final int startIndex1 = startIndex;
     int i = startIndex1;
     while (i < nonNested.size())

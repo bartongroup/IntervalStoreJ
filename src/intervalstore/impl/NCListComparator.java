@@ -18,26 +18,33 @@
  * along with Jalview.  If not, see <http://www.gnu.org/licenses/>.
  * The Jalview Authors are detailed in the 'AUTHORS' file.
  */
-package nclist.impl;
+package intervalstore.impl;
 
 import java.util.Comparator;
 
-import nclist.api.IntervalI;
+import intervalstore.api.IntervalI;
 
 /**
  * A comparator that orders ranges by either start position or end position
- * ascending. If the position matches, ordering is resolved by end position (or
- * start position).
+ * ascending. If position matches, ordering is by length descending.
  * 
  * @author gmcarstairs
- *
  */
-public class RangeComparator implements Comparator<IntervalI>
+public class NCListComparator implements Comparator<IntervalI>
 {
-  public static final Comparator<IntervalI> BY_START_POSITION = new RangeComparator(
+  /**
+   * A comparator that orders intervals by start position ascending, and within
+   * that by length descending. This provides the canonical ordering of
+   * intervals into subranges in order to build a nested containment list.
+   */
+  public static final Comparator<IntervalI> BY_START_POSITION = new NCListComparator(
           true);
 
-  public static final Comparator<IntervalI> BY_END_POSITION = new RangeComparator(
+  /**
+   * A comparator that orders intervals by end position ascending, and within
+   * that by length descending
+   */
+  public static final Comparator<IntervalI> BY_END_POSITION = new NCListComparator(
           false);
 
   boolean byStart;
@@ -48,7 +55,7 @@ public class RangeComparator implements Comparator<IntervalI>
    * @param byStartPosition
    *          if true, order based on start position, if false by end position
    */
-  RangeComparator(boolean byStartPosition)
+  NCListComparator(boolean byStartPosition)
   {
     byStart = byStartPosition;
   }

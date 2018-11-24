@@ -18,9 +18,9 @@
  * along with Jalview.  If not, see <http://www.gnu.org/licenses/>.
  * The Jalview Authors are detailed in the 'AUTHORS' file.
  */
-package nclist.impl;
+package intervalstore.impl;
 
-import nclist.api.IntervalI;
+import intervalstore.api.IntervalI;
 
 /**
  * An immutable data bean that models a start-end range

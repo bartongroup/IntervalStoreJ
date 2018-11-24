@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
@@ -9,6 +9,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.testng.annotations.Test;
+
+import intervalstore.impl.IntervalStore;
+import intervalstore.impl.Range;
 
 public class IntervalIteratorTest
 {

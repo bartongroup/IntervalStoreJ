@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -13,7 +13,9 @@ import java.util.Random;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import nclist.api.IntervalI;
+import intervalstore.api.IntervalI;
+import intervalstore.impl.NCList;
+import intervalstore.impl.NCListComparator;
 
 /**
  * Does a number of pseudo-random (reproducible) tests of an NCList, to exercise
@@ -35,7 +37,7 @@ public class NCListRandomisedTest
    */
   private Random random = new Random(107);
 
-  private Comparator<IntervalI> sorter = new RangeComparator(true);
+  private Comparator<IntervalI> sorter = new NCListComparator(true);
 
   /**
    * Provides the scales for pseudo-random NCLists i.e. the range of the maximal

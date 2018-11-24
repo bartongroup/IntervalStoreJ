@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -138,7 +138,7 @@ public class IntervalStoreTest
   }
 
   /**
-   * Helper method to add a feature of no particular type
+   * Helper method to add a feature with type "desc"
    * 
    * @param store
    * @param from
@@ -199,6 +199,13 @@ public class IntervalStoreTest
     assertTrue(store.addNonNestedInterval(sf11));
     SimpleFeature sf12 = new SimpleFeature(10, 19, type);
     assertFalse(store.addNonNestedInterval(sf12));
+
+    assertEquals(store.toString(),
+            "[5:15:Domain, 10:20:Domain, 10:20:Domain, 30:40:Domain]");
+    SimpleFeature sf13 = new SimpleFeature(35, 55, type);
+    assertTrue(store.addNonNestedInterval(sf13));
+    SimpleFeature sf14 = new SimpleFeature(1, 2, type);
+    assertTrue(store.addNonNestedInterval(sf14));
   }
 
   @Test(groups = "Functional")
@@ -261,6 +268,82 @@ public class IntervalStoreTest
 
     assertTrue(store.remove(sf8));
     assertTrue(store.isEmpty());
+  }
+
+  @Test(groups = "Functional")
+  public void testRemoveNonNested()
+  {
+    IntervalStore<SimpleFeature> store = new IntervalStore<>();
+    SimpleFeature sf1 = add(store, 15, 25);
+    SimpleFeature sf4 = new SimpleFeature(25, 35, "desc");
+    store.add(sf4);
+    SimpleFeature sf5 = new SimpleFeature(25, 35, "desc");
+    store.add(sf5);
+    SimpleFeature sf6 = new SimpleFeature(25, 35, "desc2");
+    store.add(sf6);
+    SimpleFeature sf7 = new SimpleFeature(25, 35, "desc2");
+    store.add(sf7);
+
+    // remove unmatched entry fails
+    assertFalse(store.removeNonNested(new SimpleFeature(10, 12, "desc")));
+    assertFalse(store.removeNonNested(new SimpleFeature(25, 35, "desc3")));
+
+    assertEquals(store.size(), 5);
+    assertTrue(store.removeNonNested(new SimpleFeature(15, 25, "desc")));
+    assertEquals(store.size(), 4);
+    assertFalse(store.contains(sf1));
+
+    /*
+     * remove an entry; the first matching entry is removed
+     * there is no guarantee which object instance this is
+     * if more than one entry matches
+     */
+    assertTrue(store.contains(sf4));
+    assertTrue(store.removeNonNested(sf4));
+    assertEquals(store.size(), 3);
+
+    /*
+     * 'contains' answers true for both (by equals test),
+     * even though only one is actually still in the list
+     */
+    assertTrue(store.contains(sf4));
+    assertTrue(store.contains(sf5));
+    List<SimpleFeature> nonNested = (List<SimpleFeature>)PA.getValue(store,  "nonNested");
+    assertFalse(containsObject(nonNested, sf4)
+            && containsObject(nonNested, sf5));
+
+    // remove an entry by matching first equal item
+    assertTrue(store.contains(sf6));
+    assertTrue(store.contains(sf7));
+    // sf6.equals(sf7) so is the removed item
+    assertTrue(store.removeNonNested(sf7));
+    assertEquals(store.size(), 2);
+    assertTrue(store.contains(sf5));
+    assertTrue(store.contains(sf6));
+    assertTrue(store.contains(sf7));
+    assertFalse(containsObject(nonNested, sf6)
+            && containsObject(nonNested, sf7));
+  }
+
+  /**
+   * A helper method to test whether a list contains a specific object (by
+   * object identity, not equality test as used by List.contains())
+   * 
+   * @param list
+   * @param o
+   * @return
+   */
+  private static boolean containsObject(List<? extends Object> list,
+          Object o)
+  {
+    for (Object i : list)
+    {
+      if (i == o)
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Test(groups = "Functional")

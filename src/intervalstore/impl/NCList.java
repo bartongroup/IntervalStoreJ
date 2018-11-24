@@ -18,7 +18,7 @@
  * along with Jalview.  If not, see <http://www.gnu.org/licenses/>.
  * The Jalview Authors are detailed in the 'AUTHORS' file.
  */
-package nclist.impl;
+package intervalstore.impl;
 
 import java.util.AbstractCollection;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import nclist.api.IntervalI;
+import intervalstore.api.IntervalI;
 
 /**
  * An adapted implementation of NCList as described in the paper
@@ -135,19 +135,23 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   }
 
   /**
-   * Sort and group ranges into sublists where each sublist represents a region
-   * and its contained subregions
+   * Sorts and groups ranges into sublists where each sublist represents an
+   * interval and its contained subintervals
    * 
    * @param ranges
    */
   protected void build(List<T> ranges)
   {
     /*
-     * sort by start ascending so that contained intervals 
-     * follow their containing interval
+     * sort by start ascending, length descending, so that
+     * contained intervals follow their containing interval
      */
-    Collections.sort(ranges, RangeComparator.BY_START_POSITION);
+    Collections.sort(ranges, NCListComparator.BY_START_POSITION);
 
+    /*
+     * scan for the start-end list indices of 
+     * subranges which have no mutual containment
+     */
     List<Range> sublists = buildSubranges(ranges);
 
     /*
@@ -163,6 +167,9 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     size = ranges.size();
   }
 
+  /**
+   * Default constructor
+   */
   public NCList()
   {
     subranges = new ArrayList<>();
@@ -469,10 +476,10 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    * @param from
    * @return
    */
-  protected int findFirstOverlap(long from)
+  protected int findFirstOverlap(final long from)
   {
-    return BinarySearcher.binarySearch(subranges,
-            BinarySearcher.byEnd(from));
+    return BinarySearcher.findFirst(subranges,
+            val -> val.getEnd() >= from);
   }
 
   /**

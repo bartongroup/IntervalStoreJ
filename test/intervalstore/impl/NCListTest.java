@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -15,8 +15,11 @@ import java.util.NoSuchElementException;
 
 import org.testng.annotations.Test;
 
+import intervalstore.api.IntervalI;
+import intervalstore.impl.NCList;
+import intervalstore.impl.NCNode;
+import intervalstore.impl.Range;
 import junit.extensions.PA;
-import nclist.api.IntervalI;
 
 public class NCListTest
 {

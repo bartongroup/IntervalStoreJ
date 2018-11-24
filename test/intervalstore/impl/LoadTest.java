@@ -1,4 +1,4 @@
-package nclist.impl;
+package intervalstore.impl;
 
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -25,12 +25,12 @@ public class LoadTest
   /*
    * Ensembl and gnomAD variants on human BRAF gene 
    */
-  private static final String VARIANTS_FILENAME = "test/nclist/impl/brafVariants.csv";
+  private static final String VARIANTS_FILENAME = "test/intervalstore/impl/brafVariants.csv";
 
   /*
    * Coding, non-coding and pseudo-gene start-end loci on each human chromosome 
    */
-  private static final String GENES_FILENAME = "test/nclist/impl/humanGenes.csv";
+  private static final String GENES_FILENAME = "test/intervalstore/impl/humanGenes.csv";
 
   /**
    * This 'test' loads a file of variants interval data to an NCList then
