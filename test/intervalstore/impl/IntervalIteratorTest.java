@@ -10,9 +10,6 @@ import java.util.NoSuchElementException;
 
 import org.testng.annotations.Test;
 
-import intervalstore.impl.IntervalStore;
-import intervalstore.impl.Range;
-
 public class IntervalIteratorTest
 {
   @Test(groups = "Functional")
