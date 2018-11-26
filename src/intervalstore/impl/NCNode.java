@@ -303,7 +303,9 @@ class NCNode<T extends IntervalI> implements IntervalI
   }
 
   /**
-   * Answers a depth-first iterator over the intervals stored in this node
+   * Answers an iterator over the intervals stored in this node. The iterator
+   * does not support the optional <code>remove</code> operation (throws
+   * <code>UnsupportedOperationException</code> if attempted).
    * 
    * @return
    */

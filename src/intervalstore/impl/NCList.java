@@ -60,21 +60,19 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     }
 
     /**
-     * Moves the subrange iterator to the next subrange which is not empty, or
-     * sets to null if none found. Answers the index of the corresponding
-     * subrange in the list.
+     * Moves the subrange iterator to the next subrange, and answers its index
+     * in the list of subranges. If there are no more, sets the iterator to null
+     * and answers -1.
      * 
      * @return
      */
     private int nextSubrange(int after)
     {
-      for (int i = after + 1; i < subranges.size(); i++)
+      int nextIndex = after + 1;
+      if (nextIndex < subranges.size())
       {
-        if (subranges.get(i).size() > 0)
-        {
-          nodeIterator = subranges.get(i).iterator();
-          return i;
-        }
+        nodeIterator = subranges.get(nextIndex).iterator();
+        return nextIndex;
       }
       nodeIterator = null;
       return -1;
@@ -721,6 +719,11 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     return subDepth;
   }
 
+  /**
+   * Answers an iterator over the contained intervals, with no particular order
+   * guaranteed. The iterator does not support the optional <code>remove</code>
+   * operation (throws <code>UnsupportedOperationException</code> if attempted).
+   */
   @Override
   public Iterator<T> iterator()
   {
