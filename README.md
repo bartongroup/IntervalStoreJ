@@ -18,7 +18,7 @@ Key features of `IntervalStore`
 
 To use IntervalStore in your application:
 * add intervalstore.jar to the classpath
-* have your type(s) to be stored implement `intervalstore.api.IntervalI`
+* have your type to be stored implement `intervalstore.api.IntervalI`
 * construct, add to and query `intervalstore.impl.IntervalStore` as required
 
 Unit tests give 99% coverage of the code. 
