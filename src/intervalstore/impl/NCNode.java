@@ -94,16 +94,22 @@ class NCNode<T extends IntervalI> implements IntervalI
   private NCList<T> subregions;
 
   /**
-   * Constructor given a list of ranges
+   * Constructor given a list of ranges. The list not be empty, and should be
+   * ordered so that the first range contains all the others. If not, behaviour
+   * will likely be invalid.
    * 
    * @param ranges
+   * @throws IllegalArgumentException
+   *           if the list is empty
    */
   NCNode(List<T> ranges)
   {
-    if (!ranges.isEmpty())
+    if (ranges.isEmpty())
     {
-      region = ranges.get(0);
+      throw new IllegalArgumentException("List may not be empty");
     }
+    region = ranges.get(0);
+
     if (ranges.size() > 1)
     {
       subregions = new NCList<>(ranges.subList(1, ranges.size()));

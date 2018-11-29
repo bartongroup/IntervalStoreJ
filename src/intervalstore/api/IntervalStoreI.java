@@ -34,6 +34,8 @@ package intervalstore.api;
 import java.util.Collection;
 import java.util.List;
 
+import intervalstore.impl.NCList;
+
 public interface IntervalStoreI<T extends IntervalI> extends Collection<T>
 {
 
@@ -59,17 +61,22 @@ public interface IntervalStoreI<T extends IntervalI> extends Collection<T>
 
   /**
    * Answers true if the data held satisfy the rules of construction of an
-   * NCList, else false.
+   * IntervalStore, else false.
    * 
    * @return
    */
   boolean isValid();
 
   /**
-   * Answers the level of nesting of NCList/NCNode in the data tree, where 1
-   * means there are no contained sub-intervals
+   * Answers the level of nesting of intervals in the store, as
+   * <ul>
+   * <li>0 if the store is empty</li>
+   * <li>1 if all intervals are 'top level' (non nested)</li>
+   * <li>else 1 plus the depth of the enclosed NCList</li>
+   * </ul>
    * 
    * @return
+   * @see NCList#getDepth()
    */
   int getDepth();
 

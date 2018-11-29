@@ -35,9 +35,11 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.testng.annotations.Test;
@@ -46,6 +48,108 @@ import junit.extensions.PA;
 
 public class IntervalStoreTest
 {
+  @Test(groups = "Functional")
+  public void testConstructor_noNesting()
+  {
+    /*
+     * no-arg constructor is not terribly interesting
+     */
+    IntervalStore<SimpleFeature> store = new IntervalStore<>();
+    assertTrue(store.isValid());
+    assertTrue(store.isEmpty());
+    assertNull(PA.getValue(store, "nested"));
+    List nonNested = (List) PA.getValue(store, "nonNested");
+    assertNotNull(nonNested);
+    assertTrue(nonNested.isEmpty());
+
+    /*
+     * make some ranges that are overlapping but non-nested
+     */
+    Range r1 = new Range(10, 20);
+    Range r2 = new Range(10, 20);
+    Range r3 = new Range(15, 21);
+    Range r4 = new Range(20, 30);
+    Range r5 = new Range(40, 40);
+    Range r6 = new Range(40, 40);
+    // add to a list in unsorted order so constructor has to sort
+    List<Range> ranges = Arrays.asList(r6, r1, r4, r3, r2, r5);
+
+    IntervalStore<Range> store2 = new IntervalStore<>(ranges);
+    assertTrue(store2.isValid());
+    assertEquals(store2.size(), 6);
+    assertNull(PA.getValue(store2, "nested"));
+    nonNested = (List) PA.getValue(store2, "nonNested");
+    assertNotNull(nonNested);
+    assertEquals(nonNested.size(), 6);
+    assertSame(nonNested.get(0), r1);
+    assertSame(nonNested.get(1), r2);
+    assertSame(nonNested.get(2), r3);
+    assertSame(nonNested.get(3), r4);
+    // co-located intervals stay in their original respective order
+    // (because Collections.sort() is 'stable')
+    assertSame(nonNested.get(4), r6);
+    assertSame(nonNested.get(5), r5);
+  }
+
+  @Test(groups = "Functional")
+  public void testConstructor_nesting()
+  {
+    /*
+     * make some ranges including co-located, overlapping and nested
+     */
+    Range r1 = new Range(10, 20);
+    Range r2 = new Range(10, 20);
+    Range r3 = new Range(15, 22);
+    Range r4 = new Range(20, 30);
+    Range r5 = new Range(40, 40);
+    Range r6 = new Range(40, 40);
+    Range r7 = new Range(22, 28);
+    Range r8 = new Range(22, 28);
+    Range r9 = new Range(24, 26);
+    Range r10 = new Range(10, 21);
+    // add to a list in unsorted order so constructor has to sort
+    List<Range> ranges = Arrays.asList(r6, r7, r1, r10, r4, r9, r3, r2, r8,
+            r5);
+
+    IntervalStore<Range> store2 = new IntervalStore<>(ranges);
+
+    /*
+     * note the list is now sorted by start ascending, end descending
+     */
+    assertEquals(ranges,
+            Arrays.asList(r10, r1, r2, r3, r4, r7, r8, r9, r5, r6));
+
+    assertTrue(store2.isValid());
+    assertEquals(store2.size(), 10);
+
+    NCList<Range> nested = (NCList<Range>) PA.getValue(store2, "nested");
+    List<Range> nonNested = (List<Range>) PA.getValue(store2, "nonNested");
+
+    /*
+     * r1 and r2[10-20] nest in r10[20-21]
+     * r7[22-28] nests in r4[20-30]
+     * r8[22-28] nests in r7
+     * r9[24-26] nests in r8
+     */
+    assertNotNull(nested);
+    assertEquals(nested.size(), 5);
+    assertTrue(nested.isValid());
+    assertTrue(nested.contains(r1));
+    assertTrue(nested.contains(r2));
+    assertTrue(nested.contains(r7));
+    assertTrue(nested.contains(r8));
+    assertTrue(nested.contains(r9));
+
+    assertNotNull(nonNested);
+    assertEquals(nonNested.size(), 5);
+    assertSame(nonNested.get(0), r10);
+    assertSame(nonNested.get(1), r3);
+    assertSame(nonNested.get(2), r4);
+    // co-located intervals stay in their original respective order
+    // (because Collections.sort() is 'stable')
+    assertSame(nonNested.get(3), r6);
+    assertSame(nonNested.get(4), r5);
+  }
 
   @Test(groups = "Functional")
   public void testFindOverlaps_nonNested()
@@ -651,5 +755,12 @@ public class IntervalStoreTest
     assertEquals(store.getDepth(), 3);
     store.remove(sf3); // 35-36 goes up one level
     assertEquals(store.getDepth(), 2);
+
+    store = new IntervalStore<>();
+    sf1 = add(store, 10, 20); // non-nested
+    add(store, 12, 18); // nested
+    assertEquals(store.getDepth(), 2);
+    store.remove(sf1); // leaves an empty non-nested list
+    assertEquals(store.getDepth(), 1);
   }
 }

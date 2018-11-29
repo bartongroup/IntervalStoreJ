@@ -34,11 +34,15 @@ package intervalstore.impl;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.testng.annotations.Test;
 
@@ -165,6 +169,12 @@ public class NCNodeTest
     assertTrue(node.isValid());
     PA.setValue(r3, "start", 12);
     assertFalse(node.isValid()); // r3 should precede r2
+    PA.setValue(r3, "start", 16);
+    assertTrue(node.isValid());
+
+    // expect an empty NCList to be nulled
+    ((NCList) PA.getValue(node, "subregions")).clear();
+    assertFalse(node.isValid());
   }
 
   @Test(groups = "Functional")
@@ -196,5 +206,52 @@ public class NCNodeTest
 
     // enclosed NCList is nulled when empty
     assertNull(node.getSubRegions());
+  }
+
+  @Test(groups = "Functional")
+  public void testConstructor()
+  {
+    Range r1 = new Range(10, 20);
+    Range r2 = new Range(14, 15);
+    Range r3 = new Range(16, 17);
+
+    NCNode<Range> node = new NCNode<>(Arrays.asList(r1, r2, r3));
+    assertSame(node.getRegion(), r1);
+    assertEquals(node.toString(), "10-20 [14-15, 16-17]");
+
+    /*
+     * an empty list is rejected
+     */
+    try
+    {
+      node = new NCNode<>(new ArrayList<Range>());
+      fail("expected exception");
+    } catch (IllegalArgumentException e)
+    {
+      // expected
+    }
+  }
+
+  @Test(groups = "Functional")
+  public void testIterator()
+  {
+    Range r1 = new Range(10, 20);
+    Range r2 = new Range(14, 15);
+    Range r3 = new Range(16, 17);
+
+    NCNode<Range> node = new NCNode<>(Arrays.asList(r1, r2, r3));
+    Iterator<Range> it = node.iterator();
+    assertSame(it.next(), r1);
+    assertSame(it.next(), r2);
+    assertSame(it.next(), r3);
+    assertFalse(it.hasNext());
+    try
+    {
+      it.next();
+      fail("expected exception");
+    } catch (NoSuchElementException e)
+    {
+      // expected
+    }
   }
 }

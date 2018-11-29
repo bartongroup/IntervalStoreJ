@@ -152,16 +152,10 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   protected void build(List<T> ranges)
   {
     /*
-     * sort by start ascending, length descending, so that
-     * contained intervals follow their containing interval
+     * sort and partition into subranges 
+     * which have no mutual containment
      */
-    Collections.sort(ranges, NCListComparator.BY_START_POSITION);
-
-    /*
-     * scan for the start-end list indices of 
-     * subranges which have no mutual containment
-     */
-    List<IntervalI> sublists = buildSubranges(ranges);
+    List<IntervalI> sublists = partitionNestedSublists(ranges);
 
     /*
      * convert each subrange to an NCNode consisting of a range and
@@ -185,13 +179,14 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   }
 
   /**
-   * Traverses the sorted ranges to identify sublists, within which each
-   * interval contains the one that follows it
+   * Sorts and traverses the ranges to identify sublists, whose start intervals
+   * are overlapping or disjoint but not mutually contained. Answers a list of
+   * start-end indices of the sorted list of ranges.
    * 
    * @param ranges
    * @return
    */
-  protected List<IntervalI> buildSubranges(List<T> ranges)
+  protected List<IntervalI> partitionNestedSublists(List<T> ranges)
   {
     List<IntervalI> sublists = new ArrayList<>();
 
@@ -199,6 +194,12 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     {
       return sublists;
     }
+
+    /*
+     * sort by start ascending, length descending, so that
+     * contained intervals follow their containing interval
+     */
+    Collections.sort(ranges, new NCListBuilder<>().getComparator());
 
     int listStartIndex = 0;
 

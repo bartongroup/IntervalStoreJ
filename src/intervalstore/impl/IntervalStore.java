@@ -127,6 +127,54 @@ public class IntervalStore<T extends IntervalI>
   }
 
   /**
+   * Constructor given a list of intervals. Note that the list may get sorted as
+   * a side-effect of calling this constructor.
+   */
+  public IntervalStore(List<T> intervals)
+  {
+    this();
+
+    /*
+     * partition into subranges whose root intervals
+     * have no mutual containment (if no intervals are nested,
+     * each subrange is of length 1 i.e. a single interval)
+     */
+    List<IntervalI> sublists = new NCListBuilder<T>()
+            .partitionNestedSublists(intervals);
+
+    /*
+     * add all 'subrange root intervals' (and any co-located intervals)
+     * to our top level list of 'non-nested' intervals; 
+     * put aside any left over for our NCList
+     */
+    List<T> nested = new ArrayList<>();
+
+    for (IntervalI subrange : sublists)
+    {
+      int listIndex = subrange.getBegin();
+      IntervalI root = intervals.get(listIndex);
+      while (listIndex <= subrange.getEnd())
+      {
+        T t = intervals.get(listIndex);
+        if (root.equalsInterval(t))
+        {
+          nonNested.add(t);
+        }
+        else
+        {
+          nested.add(t);
+        }
+        listIndex++;
+      }
+    }
+
+    if (!nested.isEmpty())
+    {
+      this.nested = new NCList<>(nested);
+    }
+  }
+
+  /**
    * Adds one interval to the store.
    * 
    * @param interval
@@ -342,7 +390,8 @@ public class IntervalStore<T extends IntervalI>
     {
       return 0;
     }
-    return 1 + (nested == null ? 0 : nested.getDepth());
+    return (nonNested.isEmpty() ? 0 : 1)
+            + (nested == null ? 0 : nested.getDepth());
   }
 
   /**

@@ -40,8 +40,12 @@ import java.util.function.Function;
  * 
  * @author gmcarstairs
  */
-public class BinarySearcher
+public final class BinarySearcher
 {
+  private BinarySearcher()
+  {
+  }
+
   /**
    * Performs a binary search of the list to find the index of the first entry
    * for which the test returns true. Answers the length of the list if there is
