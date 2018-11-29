@@ -247,6 +247,7 @@ public class IntervalStoreTest
     assertTrue(store.contains(sf1));
 
     assertFalse(store.remove("what is this?"));
+    assertFalse(store.remove(null));
 
     /*
      * simple deletion

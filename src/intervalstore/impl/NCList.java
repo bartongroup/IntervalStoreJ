@@ -161,7 +161,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      * scan for the start-end list indices of 
      * subranges which have no mutual containment
      */
-    List<Range> sublists = buildSubranges(ranges);
+    List<IntervalI> sublists = buildSubranges(ranges);
 
     /*
      * convert each subrange to an NCNode consisting of a range and
@@ -191,9 +191,9 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    * @param ranges
    * @return
    */
-  protected List<Range> buildSubranges(List<T> ranges)
+  protected List<IntervalI> buildSubranges(List<T> ranges)
   {
-    List<Range> sublists = new ArrayList<>();
+    List<IntervalI> sublists = new ArrayList<>();
 
     if (ranges.isEmpty())
     {

@@ -265,6 +265,10 @@ public class IntervalStore<T extends IntervalI>
   @Override
   public synchronized boolean remove(Object o)
   {
+    if (o == null)
+    {
+      return false;
+    }
     try
     {
       @SuppressWarnings("unchecked")
