@@ -38,9 +38,17 @@ import java.util.List;
 import java.util.Random;
 
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+/**
+ * A class with methods to inspect the performance and scalability of loading
+ * and querying IntervalStore and NCList
+ * 
+ * @author gmcarstairs
+ */
+// this is a long running test so normally left disabled
+// set enabled = true to run
+@Test(enabled = false)
 public class TimingTests
 {
   /*
@@ -53,45 +61,44 @@ public class TimingTests
    */
   static final int REPEATS = 10;
 
+  /*
+   * number of iterations to run before starting timings
+   */
+  static final int WARMUPS = 3;
+
   private Random rand;
 
   @BeforeClass
   public void setUp()
   {
     rand = new Random(RANDOM_SEED);
-    System.out.println("Test\tsize\titeration\tms\tsize/ms");
-  }
-
-  /**
-   * Data provider for the number of intervals to add in each test run
-   * 
-   * @return
-   */
-  @DataProvider(name = "intervalCount")
-  public Object[][] getIntervalCount()
-  {
-    return new Object[][] { new Integer[] { 10000 },
-        new Integer[]
-        { 100000 } };
+    System.out.println("Test\tsize\titeration\tms\tcount/ms");
   }
 
   /**
    * Timing tests of loading an NCList, with all intervals loaded in the
    * constructor
    */
-  @Test(groups = "Timing", dataProvider = "intervalCount")
-  public void testLoadTiming_nclist_oneOff(Integer count)
+  public void testLoadTime_nclist_bulkLoad()
   {
-    for (int i = 0; i < REPEATS; i++)
+    for (int j = 1; j <= 5; j++)
     {
-      List<Range> ranges = generateIntervals(count);
-      long now = System.currentTimeMillis();
-      NCList<Range> ncl = new NCList<>(ranges);
-      long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              "NCList oneOff", count, (i + 1), elapsed, ratio));
-      assertTrue(ncl.isValid());
+      int count = j * 100 * 1000; // 200K - 500K
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
+      {
+        List<Range> ranges = generateIntervals(count);
+        long now = System.currentTimeMillis();
+        NCList<Range> ncl = new NCList<>(ranges);
+        long elapsed = System.currentTimeMillis() - now;
+        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+        if (i >= WARMUPS)
+        {
+          System.out.println(
+                  String.format("%s\t%d\t%d\t%d\t%.1f", "NCList bulk load",
+                          count, (i + 1 - WARMUPS), elapsed, ratio));
+        }
+        assertTrue(ncl.isValid());
+      }
     }
   }
 
@@ -117,73 +124,90 @@ public class TimingTests
   /**
    * Timing tests of loading an NCList, with intervals loaded one at a time
    */
-  @Test(groups = "Timing", dataProvider = "intervalCount")
-  public void testLoadTiming_nclist_incremental(Integer count)
+  public void testLoadTime_nclist_incremental()
   {
-    for (int i = 0; i < REPEATS; i++)
+    for (int j = 1; j <= 5; j++)
     {
-      NCList<Range> ncl = new NCList<>();
-      List<Range> ranges = generateIntervals(count);
-      long now = System.currentTimeMillis();
-      ncl.addAll(ranges);
-      long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              "NCList incr", count, (i + 1), elapsed, ratio));
-      assertTrue(ncl.isValid());
+      int count = j * 100 * 1000; // 200K - 500K
+      loadNclist(count, false, "NCList incr");
     }
-
   }
 
   /**
    * Timing tests of loading a simple list, with all intervals loaded in the
    * constructor
    */
-  @Test(groups = "Timing", dataProvider = "intervalCount")
-  public void testLoadTiming_simpleList_load(Integer count)
+  public void testLoadTime_naiveList_bulkLoad()
   {
-    for (int i = 0; i < REPEATS; i++)
+    int[] counts = { 100 * 1000, 500 * 1000 };
+    for (int count : counts)
     {
-      List<Range> simple = new ArrayList<>();
-      List<Range> ranges = generateIntervals(count);
-      long now = System.currentTimeMillis();
-      simple.addAll(ranges);
-      long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              "Simple load", count, (i + 1), elapsed, ratio));
+      for (int i = 0; i < REPEATS; i++)
+      {
+        List<Range> simple = new ArrayList<>();
+        List<Range> ranges = generateIntervals(count);
+        long now = System.currentTimeMillis();
+        simple.addAll(ranges);
+        long elapsed = System.currentTimeMillis() - now;
+        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+        System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
+                "Naive bulk load", count, (i + 1), elapsed, ratio));
+      }
     }
   }
 
   /**
    * Timing tests of loading a simple list, with intervals loaded one at a time
    */
-  // disabled by default as rather slow running, set enabled = true to run
-  @Test(groups = "Timing", dataProvider = "intervalCount", enabled = false)
-  public void testLoadTiming_simplelist_loadNoDups(Integer count)
+  public void testLoadTime_naiveList_noDuplicates()
   {
-    for (int i = 0; i < REPEATS; i++)
+    int[] counts = { 10 * 1000, 100 * 1000, 200 * 1000 };
+    for (int count : counts)
     {
-      List<Range> simple = new ArrayList<>();
-      List<Range> ranges = generateIntervals(count);
-      long now = System.currentTimeMillis();
-      for (Range r : ranges)
+      for (int i = 0; i < REPEATS; i++)
       {
-        if (!simple.contains(r))
-          simple.addAll(ranges);
+        List<Range> simple = new ArrayList<>();
+        List<Range> ranges = generateIntervals(count);
+        long now = System.currentTimeMillis();
+        for (Range r : ranges)
+        {
+          if (!simple.contains(r))
+          {
+            simple.addAll(ranges);
+          }
+        }
+        long elapsed = System.currentTimeMillis() - now;
+        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+        System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
+                "Naive no duplicates", count, (i + 1), elapsed, ratio));
       }
-      long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              "Simple noDups", count, (i + 1), elapsed, ratio));
     }
   }
 
   /**
-   * Timing tests of loading an NCList, with intervals loaded one at a time
+   * Timing tests of loading an NCList, with intervals loaded one at a time, and
+   * a check for duplicates before adding each interval
    */
-  @Test(groups = "Timing", dataProvider = "intervalCount")
-  public void testLoadTiming_nclist_incrementalNoDuplicates(Integer count)
+  public void testLoadTime_nclist_incrementalNoDuplicates()
+  {
+    for (int j = 1; j <= 5; j++)
+    {
+      int count = j * 100 * 1000; // 200K - 500K
+      loadNclist(count, true, "NCList no duplicates");
+    }
+  }
+
+  /**
+   * Performs a number of repeats of a timing test which adds a number of
+   * intervals one at a time to an NCList, optionally testing first for
+   * duplicate (i.e. whether the list already contains the interval)
+   * 
+   * @param count
+   * @param allowDuplicates
+   * @param testName
+   */
+  private void loadNclist(Integer count, boolean allowDuplicates,
+          String testName)
   {
     for (int i = 0; i < REPEATS; i++)
     {
@@ -192,7 +216,7 @@ public class TimingTests
       long now = System.currentTimeMillis();
       for (Range r : ranges)
       {
-        if (!ncl.contains(r))
+        if (allowDuplicates || !ncl.contains(r))
         {
           ncl.add(r);
         }
@@ -200,33 +224,7 @@ public class TimingTests
       long elapsed = System.currentTimeMillis() - now;
       float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
       System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              "NCList incrNoDup", count, (i + 1), elapsed, ratio));
-      assertTrue(ncl.isValid());
-    }
-  
-  }
-
-  /**
-   * Timing tests of querying an NCList for overlaps
-   */
-  @Test(groups = "Timing", dataProvider = "intervalCount")
-  public void testQueryTiming_nclist(Integer count)
-  {
-    for (int i = 0; i < REPEATS; i++)
-    {
-      List<Range> ranges = generateIntervals(count);
-      NCList<Range> ncl = new NCList<>(ranges);
-
-      List<Range> queries = generateIntervals(count);
-      long now = System.currentTimeMillis();
-      for (Range q : queries)
-      {
-        ncl.findOverlaps(q.getBegin(), q.getEnd());
-      }
-      long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              "NCList overlaps", count, (i + 1), elapsed, ratio));
+              testName, count, (i + 1), elapsed, ratio));
       assertTrue(ncl.isValid());
     }
   }
@@ -234,24 +232,59 @@ public class TimingTests
   /**
    * Timing tests of querying an NCList for overlaps
    */
-  // disabled by default as rather slow running, set enabled = true to run
-  @Test(groups = "Timing", dataProvider = "intervalCount", enabled = false)
-  public void testQueryTiming_simple(Integer count)
+  public void testQueryTime_nclist()
   {
-    for (int i = 0; i < REPEATS; i++)
+    int[] counts = { 10 * 1000, 100 * 1000, 200 * 1000, 300 * 1000,
+        400 * 1000, 500 * 1000 };
+    for (int count : counts)
     {
-      List<Range> ranges = generateIntervals(count);
-  
-      List<Range> queries = generateIntervals(count);
-      long now = System.currentTimeMillis();
-      for (Range q : queries)
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
-        findOverlaps(ranges, q);
+        List<Range> ranges = generateIntervals(count);
+        NCList<Range> ncl = new NCList<>(ranges);
+
+        List<Range> queries = generateIntervals(count);
+        long now = System.currentTimeMillis();
+        for (Range q : queries)
+        {
+          ncl.findOverlaps(q.getBegin(), q.getEnd());
+        }
+        long elapsed = System.currentTimeMillis() - now;
+        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+        if (i >= WARMUPS)
+        {
+          System.out.println(
+                  String.format("%s\t%d\t%d\t%d\t%.1f", "NCList query",
+                          count, (i + 1 - WARMUPS), elapsed, ratio));
+        }
+        assertTrue(ncl.isValid());
       }
-      long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              "Simple overlaps", count, (i + 1), elapsed, ratio));
+    }
+  }
+
+  /**
+   * Timing tests of querying an NCList for overlaps
+   */
+  public void testQueryTime_naive()
+  {
+    for (int j = 1; j <= 5; j++)
+    {
+      int count = j * 10 * 1000; // 10K - 50K
+      for (int i = 0; i < REPEATS; i++)
+      {
+        List<Range> ranges = generateIntervals(count);
+
+        List<Range> queries = generateIntervals(count);
+        long now = System.currentTimeMillis();
+        for (Range q : queries)
+        {
+          findOverlaps(ranges, q);
+        }
+        long elapsed = System.currentTimeMillis() - now;
+        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+        System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
+                "Naive query", count, (i + 1), elapsed, ratio));
+      }
     }
   }
 
