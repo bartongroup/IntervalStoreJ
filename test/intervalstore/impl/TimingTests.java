@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
 
 /**
  * A class with methods to inspect the performance and scalability of loading
- * and querying IntervalStore and NCList
+ * and querying NCList, with a 'naive' (unordered) list for comparison
  * 
  * @author gmcarstairs
  */
@@ -234,10 +234,14 @@ public class TimingTests
    */
   public void testQueryTime_nclist()
   {
-    int[] counts = { 10 * 1000, 100 * 1000, 200 * 1000, 300 * 1000,
-        400 * 1000, 500 * 1000 };
-    for (int count : counts)
+    /*
+     * below N=20K, measured time is <10ms so prone to noise
+     */
+    int[] thousands = { 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400,
+        500 };
+    for (int k : thousands)
     {
+      int count = k * 1000;
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> ranges = generateIntervals(count);
@@ -267,7 +271,7 @@ public class TimingTests
    */
   public void testQueryTime_naive()
   {
-    for (int j = 1; j <= 5; j++)
+    for (int j = 2; j <= 6; j++)
     {
       int count = j * 10 * 1000; // 10K - 50K
       for (int i = 0; i < REPEATS; i++)
@@ -306,5 +310,128 @@ public class TimingTests
       }
     }
     return result;
+  }
+
+  /**
+   * Performs a number of repeats of a timing test which adds a number of
+   * intervals one at a time to an IntervalStore, optionally testing first for
+   * duplicate (i.e. whether the list already contains the interval)
+   * 
+   * @param count
+   * @param allowDuplicates
+   * @param testName
+   */
+  private void loadIntervalStore(Integer count, boolean allowDuplicates,
+          String testName)
+  {
+    for (int i = 0; i < REPEATS; i++)
+    {
+      IntervalStore<Range> ncl = new IntervalStore<>();
+      List<Range> ranges = generateIntervals(count);
+      long now = System.currentTimeMillis();
+      for (Range r : ranges)
+      {
+        if (allowDuplicates || !ncl.contains(r))
+        {
+          ncl.add(r);
+        }
+      }
+      long elapsed = System.currentTimeMillis() - now;
+      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
+              testName, count, (i + 1), elapsed, ratio));
+      assertTrue(ncl.isValid());
+    }
+  }
+
+  /**
+   * Timing tests of loading an IntervalStore, with all intervals loaded in the
+   * constructor
+   */
+  public void testLoadTime_intervalstore_bulkLoad()
+  {
+    for (int j = 1; j <= 5; j++)
+    {
+      int count = j * 100 * 1000; // 200K - 500K
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
+      {
+        List<Range> ranges = generateIntervals(count);
+        long now = System.currentTimeMillis();
+        IntervalStore<Range> ncl = new IntervalStore<>(ranges);
+        long elapsed = System.currentTimeMillis() - now;
+        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+        if (i >= WARMUPS)
+        {
+          System.out.println(
+                  String.format("%s\t%d\t%d\t%d\t%.1f",
+                          "IntervalStore bulk load",
+                          count, (i + 1 - WARMUPS), elapsed, ratio));
+        }
+        assertTrue(ncl.isValid());
+      }
+    }
+  }
+
+  /**
+   * Timing tests of loading an IntervalStore, with intervals loaded one at a
+   * time
+   */
+  public void testLoadTime_intervalstore_incremental()
+  {
+    for (int j = 1; j <= 5; j++)
+    {
+      int count = j * 100 * 1000; // 200K - 500K
+      loadIntervalStore(count, false, "IntervalStore incr");
+    }
+  }
+
+  /**
+   * Timing tests of loading an IntervalStore, with intervals loaded one at a
+   * time, and a check for duplicates before adding each interval
+   */
+  public void testLoadTime_intervalstore_incrementalNoDuplicates()
+  {
+    for (int j = 1; j <= 5; j++)
+    {
+      int count = j * 100 * 1000; // 200K - 500K
+      loadIntervalStore(count, true, "IntervalStore no duplicates");
+    }
+  }
+
+  /**
+   * Timing tests of querying an IntervalStore for overlaps
+   */
+  public void testQueryTime_intervalstore()
+  {
+    /*
+     * below N=20K, measured time is <10ms so prone to noise
+     */
+    int[] thousands = { 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400,
+        500 };
+    for (int k : thousands)
+    {
+      int count = k * 1000;
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
+      {
+        List<Range> ranges = generateIntervals(count);
+        IntervalStore<Range> ncl = new IntervalStore<>(ranges);
+  
+        List<Range> queries = generateIntervals(count);
+        long now = System.currentTimeMillis();
+        for (Range q : queries)
+        {
+          ncl.findOverlaps(q.getBegin(), q.getEnd());
+        }
+        long elapsed = System.currentTimeMillis() - now;
+        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
+        if (i >= WARMUPS)
+        {
+          System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
+                  "IntervalStore query", count, (i + 1 - WARMUPS), elapsed,
+                  ratio));
+        }
+        assertTrue(ncl.isValid());
+      }
+    }
   }
 }

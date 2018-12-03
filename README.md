@@ -22,5 +22,5 @@ To use IntervalStore in your application:
 * construct, add to and query `intervalstore.impl.IntervalStore` as required
 
 Unit tests give 99% coverage of the code. 
-These require the TestNG library, available from the Eclipse Marketplace, or https://testng.org/doc/download.html.
-
+These require the TestNG library, available from the [Eclipse Marketplace](https://marketplace.eclipse.org/content/testng-eclipse), 
+or <https://testng.org/doc/download.html>.
