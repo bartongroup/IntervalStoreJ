@@ -42,13 +42,24 @@ import org.testng.annotations.Test;
 
 /**
  * A class with methods to inspect the performance and scalability of loading
- * and querying NCList, with a 'naive' (unordered) list for comparison
+ * and querying IntervalStore and NCList, and also a 'naive' (unordered) list
+ * for comparison
+ * <ul>
+ * <li>Enable this test by setting @Test(enabled = true)</li>
+ * <li>Run the class as TestNG test</li>
+ * <li>Copy the data rows from console output</li>
+ * <li>Paste into spreadsheet Timings.xlsx, columns A to D</li>
+ * <li>- use 'Paste Special - Text' to paste tab-delimited values into
+ * columns</li>
+ * <li>other columns compute derived values from raw data</li>
+ * <li>graphs select their data ranges based on the text values in column A, so
+ * don't change these</li>
+ * </ul>
  * 
  * @author gmcarstairs
  */
 // this is a long running test so normally left disabled
-// set enabled = true to run
-@Test(enabled = false)
+@Test(enabled = true)
 public class TimingTests
 {
   /*
@@ -72,7 +83,7 @@ public class TimingTests
   public void setUp()
   {
     rand = new Random(RANDOM_SEED);
-    System.out.println("Test\tsize\titeration\tms\tcount/ms");
+    System.out.println("Test\tsize\titeration\tms");
   }
 
   /**
@@ -90,12 +101,11 @@ public class TimingTests
         long now = System.currentTimeMillis();
         NCList<Range> ncl = new NCList<>(ranges);
         long elapsed = System.currentTimeMillis() - now;
-        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
         if (i >= WARMUPS)
         {
           System.out.println(
-                  String.format("%s\t%d\t%d\t%d\t%.1f", "NCList bulk load",
-                          count, (i + 1 - WARMUPS), elapsed, ratio));
+                  String.format("%s\t%d\t%d\t%d", "NCList bulk load", count,
+                          (i + 1 - WARMUPS), elapsed));
         }
         assertTrue(ncl.isValid());
       }
@@ -103,7 +113,8 @@ public class TimingTests
   }
 
   /**
-   * Generates a list of <code>count</code> intervals in the range [1, 4*count]
+   * Generates a list of <code>count</code> intervals of length 50 in the range
+   * [1, 4*count]
    * 
    * @param count
    * @return
@@ -149,9 +160,8 @@ public class TimingTests
         long now = System.currentTimeMillis();
         simple.addAll(ranges);
         long elapsed = System.currentTimeMillis() - now;
-        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-        System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-                "Naive bulk load", count, (i + 1), elapsed, ratio));
+        System.out.println(String.format("%s\t%d\t%d\t%d",
+                "Naive bulk load", count, (i + 1), elapsed));
       }
     }
   }
@@ -177,9 +187,8 @@ public class TimingTests
           }
         }
         long elapsed = System.currentTimeMillis() - now;
-        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-        System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-                "Naive no duplicates", count, (i + 1), elapsed, ratio));
+        System.out.println(String.format("%s\t%d\t%d\t%d",
+                "Naive no duplicates", count, (i + 1), elapsed));
       }
     }
   }
@@ -222,9 +231,8 @@ public class TimingTests
         }
       }
       long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              testName, count, (i + 1), elapsed, ratio));
+      System.out.println(String.format("%s\t%d\t%d\t%d", testName, count,
+              (i + 1), elapsed));
       assertTrue(ncl.isValid());
     }
   }
@@ -254,12 +262,11 @@ public class TimingTests
           ncl.findOverlaps(q.getBegin(), q.getEnd());
         }
         long elapsed = System.currentTimeMillis() - now;
-        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
         if (i >= WARMUPS)
         {
           System.out.println(
-                  String.format("%s\t%d\t%d\t%d\t%.1f", "NCList query",
-                          count, (i + 1 - WARMUPS), elapsed, ratio));
+                  String.format("%s\t%d\t%d\t%d", "NCList query", count,
+                          (i + 1 - WARMUPS), elapsed));
         }
         assertTrue(ncl.isValid());
       }
@@ -285,9 +292,8 @@ public class TimingTests
           findOverlaps(ranges, q);
         }
         long elapsed = System.currentTimeMillis() - now;
-        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-        System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-                "Naive query", count, (i + 1), elapsed, ratio));
+        System.out.println(String.format("%s\t%d\t%d\t%d", "Naive query",
+                count, (i + 1), elapsed));
       }
     }
   }
@@ -337,9 +343,8 @@ public class TimingTests
         }
       }
       long elapsed = System.currentTimeMillis() - now;
-      float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
-      System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-              testName, count, (i + 1), elapsed, ratio));
+      System.out.println(String.format("%s\t%d\t%d\t%d", testName, count,
+              (i + 1), elapsed));
       assertTrue(ncl.isValid());
     }
   }
@@ -359,13 +364,12 @@ public class TimingTests
         long now = System.currentTimeMillis();
         IntervalStore<Range> ncl = new IntervalStore<>(ranges);
         long elapsed = System.currentTimeMillis() - now;
-        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
         if (i >= WARMUPS)
         {
           System.out.println(
-                  String.format("%s\t%d\t%d\t%d\t%.1f",
+                  String.format("%s\t%d\t%d\t%d",
                           "IntervalStore bulk load",
-                          count, (i + 1 - WARMUPS), elapsed, ratio));
+                          count, (i + 1 - WARMUPS), elapsed));
         }
         assertTrue(ncl.isValid());
       }
@@ -423,12 +427,11 @@ public class TimingTests
           ncl.findOverlaps(q.getBegin(), q.getEnd());
         }
         long elapsed = System.currentTimeMillis() - now;
-        float ratio = elapsed == 0 ? 0 : count / (float) elapsed;
         if (i >= WARMUPS)
         {
-          System.out.println(String.format("%s\t%d\t%d\t%d\t%.1f",
-                  "IntervalStore query", count, (i + 1 - WARMUPS), elapsed,
-                  ratio));
+          System.out.println(
+                  String.format("%s\t%d\t%d\t%d", "IntervalStore query",
+                          count, (i + 1 - WARMUPS), elapsed));
         }
         assertTrue(ncl.isValid());
       }
