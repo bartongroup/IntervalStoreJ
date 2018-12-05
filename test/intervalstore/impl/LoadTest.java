@@ -93,6 +93,13 @@ public class LoadTest
           String[] tokens = line.split("\\,");
           int from = Integer.parseInt(tokens[0]);
           int to = Integer.parseInt(tokens[1]);
+          /*
+           * in BED format, 'to' is exclusive - adjust
+           */
+          if (to > from)
+          {
+            to--;
+          }
           String desc = tokens[2];
           intervals.add(new SimpleFeature(from, to, desc));
           if (from == to)
@@ -166,8 +173,7 @@ public class LoadTest
         }
         line = br.readLine();
       }
-      NCList<SimpleFeature> ncl = buildNclist(intervals,
-              "chr" + lastChr);
+      NCList<SimpleFeature> ncl = buildNclist(intervals, "chr" + lastChr);
     }
 
     System.out.println("testNclistDepth_genes: end\n");
@@ -180,12 +186,10 @@ public class LoadTest
    * @param intervals
    * @param title
    */
-  protected NCList<SimpleFeature> buildNclist(
-          List<SimpleFeature> intervals,
+  protected NCList<SimpleFeature> buildNclist(List<SimpleFeature> intervals,
           String title)
   {
-    NCList<SimpleFeature> ncl = new NCList<>(
-            intervals);
+    NCList<SimpleFeature> ncl = new NCList<>(intervals);
     assertTrue(ncl.isValid());
     @SuppressWarnings("unchecked")
     int w = ((List<SimpleFeature>) PA.getValue(ncl, "subranges")).size();
@@ -233,7 +237,7 @@ public class LoadTest
           {
             lastChr = chr;
           }
-  
+
           if (!lastChr.equals(chr))
           {
             /*
@@ -270,8 +274,8 @@ public class LoadTest
       @SuppressWarnings("unchecked")
       int w = ((List<SimpleFeature>) PA.getValue(fs, "nonNested")).size();
       @SuppressWarnings("unchecked")
-      NCList<SimpleFeature> ncl = (NCList<SimpleFeature>) PA
-              .getValue(fs, "nested");
+      NCList<SimpleFeature> ncl = (NCList<SimpleFeature>) PA.getValue(fs,
+              "nested");
       int size = fs.size();
       String msg = String.format(
               "chr%s size=%d, width=%d (%.1f%%), nclSize = %d, ncldepth=%d",
@@ -279,7 +283,96 @@ public class LoadTest
               ncl.getDepth());
       System.out.println(msg);
     }
-  
+
     System.out.println("testIntervalStoreDepth_genes: end\n");
+  }
+
+  /**
+   * This 'test' loads a file of variants interval data to an IntervalStore then
+   * queries the list to report its greatest depth, and number of single-locus
+   * entries
+   * 
+   * @throws IOException
+   */
+  @Test(groups = "Functional")
+  public void testIntervalStoreDepth_variants() throws IOException
+  {
+    System.out.println("\ntestIntervalStoreDepth_variants: start");
+    List<SimpleFeature> intervals = new ArrayList<>();
+    File f = new File(VARIANTS_FILENAME);
+    if (!f.exists())
+    {
+      fail(VARIANTS_FILENAME + " not found - please unzip "
+              + VARIANTS_FILENAME + ".zip");
+    }
+    try (BufferedReader br = new BufferedReader(new FileReader(f)))
+    {
+      int snvCount = 0;
+      int colocatedCount = 0;
+      SimpleFeature lastFeature = null;
+
+      String line = br.readLine();
+      while (line != null)
+      {
+        if (!line.startsWith("#"))
+        {
+          String[] tokens = line.split("\\,");
+          int from = Integer.parseInt(tokens[0]);
+          int to = Integer.parseInt(tokens[1]);
+          /*
+           * in BED format, 'to' is exclusive - adjust
+           */
+          if (to > from)
+          {
+            to--;
+          }
+          String desc = tokens[2];
+          SimpleFeature feature = new SimpleFeature(from, to, desc);
+          intervals.add(feature);
+          if (from == to)
+          {
+            snvCount++;
+          }
+          if (lastFeature != null && lastFeature.equalsInterval(feature))
+          {
+            colocatedCount++;
+          }
+          lastFeature = feature;
+        }
+        line = br.readLine();
+      }
+
+      System.out.println(String.format(
+              "Found %d variants including %d SNVs and %d colocated",
+              intervals.size(), snvCount, colocatedCount));
+      IntervalStore<SimpleFeature> ncl = buildIntervalStore(intervals,
+              "Variants");
+      // System.out.println(ncl.prettyPrint());
+    }
+
+    System.out.println("testIntervalStoreDepth_variants: end\n");
+  }
+
+  /**
+   * Helper method that constructs an IntervalStore from the given intervals,
+   * and reports its size, width and depth
+   * 
+   * @param intervals
+   * @param title
+   */
+  protected IntervalStore<SimpleFeature> buildIntervalStore(
+          List<SimpleFeature> intervals, String title)
+  {
+    IntervalStore<SimpleFeature> store = new IntervalStore<>(intervals);
+    assertTrue(store.isValid());
+    @SuppressWarnings("unchecked")
+    int w = ((List<SimpleFeature>) PA.getValue(store, "nonNested")).size();
+    String msg = String.format(
+            "%s size=%d, width=%d (%.1f%%), depth=%d", title,
+            store.size(), w, w * 100 / (float) store.size(),
+            store.getDepth());
+    System.out.println(msg);
+
+    return store;
   }
 }

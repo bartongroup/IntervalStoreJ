@@ -60,7 +60,7 @@ import org.testng.annotations.Test;
  * @author gmcarstairs
  */
 // this is a long running test so normally left disabled
-@Test(enabled = true)
+@Test(enabled = false)
 public class TimingTests
 {
   /*
