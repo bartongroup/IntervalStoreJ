@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -79,11 +80,26 @@ public class TimingTests
 
   private Random rand;
 
+  /*
+   * output of averages of REPEAT iterations
+   * for selected tests and sizes N;
+   * printing these out together at the end just makes them
+   * easier to select as graph ranges in Excel
+   */
+  StringBuilder averages;
+
   @BeforeClass
   public void setUp()
   {
     rand = new Random(RANDOM_SEED);
+    averages = new StringBuilder(2345);
     System.out.println("Test\tsize\titeration\tms");
+  }
+
+  @AfterClass
+  public void tearDown()
+  {
+    System.out.println(averages.toString());
   }
 
   /**
@@ -250,6 +266,7 @@ public class TimingTests
     for (int k : thousands)
     {
       int count = k * 1000;
+      long total = 0;
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> ranges = generateIntervals(count);
@@ -264,12 +281,16 @@ public class TimingTests
         long elapsed = System.currentTimeMillis() - now;
         if (i >= WARMUPS)
         {
+          total += elapsed;
           System.out.println(
                   String.format("%s\t%d\t%d\t%d", "NCList query", count,
                           (i + 1 - WARMUPS), elapsed));
         }
         assertTrue(ncl.isValid());
       }
+      averages.append(String.format("%s\t%d\t%d\t%.1f\n",
+              "NCList query avg",
+              count, 0, total / (float) REPEATS));
     }
   }
 
@@ -415,6 +436,7 @@ public class TimingTests
     for (int k : thousands)
     {
       int count = k * 1000;
+      long total = 0L;
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> ranges = generateIntervals(count);
@@ -429,12 +451,16 @@ public class TimingTests
         long elapsed = System.currentTimeMillis() - now;
         if (i >= WARMUPS)
         {
+          total += elapsed;
           System.out.println(
                   String.format("%s\t%d\t%d\t%d", "IntervalStore query",
                           count, (i + 1 - WARMUPS), elapsed));
         }
         assertTrue(ncl.isValid());
       }
+      averages.append(
+              String.format("%s\t%d\t%d\t%.1f\n", "IntervalStore query avg",
+                      count, 0, total / (float) REPEATS));
     }
   }
 }
