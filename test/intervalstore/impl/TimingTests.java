@@ -428,14 +428,12 @@ public class TimingTests
    */
   public void testQueryTime_intervalstore()
   {
-    /*
-     * below N=20K, measured time is <10ms so prone to noise
-     */
-    int[] thousands = { 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400,
-        500 };
-    for (int k : thousands)
+    for (int k = 2; k <= 10; k++)
     {
-      int count = k * 1000;
+      /*
+       * N is 200K, ... 1000K
+       */
+      int count = k * 100 * 1000;
       long total = 0L;
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
@@ -460,6 +458,54 @@ public class TimingTests
       }
       averages.append(
               String.format("%s\t%d\t%d\t%.1f\n", "IntervalStore query avg",
+                      count, 0, total / (float) REPEATS));
+    }
+  }
+
+  /**
+   * Timing tests for deleting from an IntervalStore
+   */
+  public void testRemoveTime_intervalstore()
+  {
+    /*
+     * time deleting 1000 entries from stores of various sizes N
+     */
+    final int deleteCount = 1000;
+    for (int k = 2; k <= 10; k++)
+    {
+      /*
+       * N = 200K, ..., 1000K
+       */
+      int count = k * 100 * 1000;
+      long total = 0L;
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
+      {
+        List<Range> ranges = generateIntervals(count);
+        IntervalStore<Range> ncl = new IntervalStore<>(ranges);
+  
+        /*
+         * remove intervals picked pseudo-randomly; attempts to remove the
+         * same interval may fail but that doesn't affect the test timings
+         */
+        long now = System.currentTimeMillis();
+        for (int j = 0; j < deleteCount; j++)
+        {
+          Range toDelete = ranges.get(this.rand.nextInt(count));
+          ncl.remove(toDelete);
+        }
+        long elapsed = System.currentTimeMillis() - now;
+        if (i >= WARMUPS)
+        {
+          total += elapsed;
+          System.out.println(
+                  String.format("%s\t%d\t%d\t%d", "IntervalStore remove",
+                          count, (i + 1 - WARMUPS), elapsed));
+        }
+        assertTrue(ncl.isValid());
+      }
+      averages.append(
+              String.format("%s\t%d\t%d\t%.1f\n",
+                      "IntervalStore remove avg",
                       count, 0, total / (float) REPEATS));
     }
   }
