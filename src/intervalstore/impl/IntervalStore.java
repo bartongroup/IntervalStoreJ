@@ -363,13 +363,13 @@ public class IntervalStore<T extends IntervalI>
     /*
      * traverse intervals to look for a match
      */
-    int to = entry.getEnd();
+    int from = entry.getBegin();
     int i = startIndex;
     int size = nonNested.size();
     while (i < size)
     {
       T sf = nonNested.get(i);
-      if (sf.getBegin() > to)
+      if (sf.getBegin() > from)
       {
         break;
       }

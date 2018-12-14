@@ -74,8 +74,8 @@ public final class BinarySearcher
     {
       int mid = (start + end) / 2;
       T entry = list.get(mid);
-      boolean compare = test.apply(entry);
-      if (compare)
+      boolean itsTrue = test.apply(entry);
+      if (itsTrue)
       {
         matched = mid;
         end = mid - 1;
