@@ -49,17 +49,15 @@ import org.testng.annotations.Test;
  * <li>Enable this test by setting @Test(enabled = true)</li>
  * <li>Run the class as TestNG test</li>
  * <li>Copy the data rows from console output</li>
- * <li>Paste into spreadsheet Timings.xlsx, columns A to D</li>
+ * <li>Paste into spreadsheet Timings.xlsx, columns A to G</li>
  * <li>- use 'Paste Special - Text' to paste tab-delimited values into
  * columns</li>
  * <li>other columns compute derived values from raw data</li>
- * <li>graphs select their data ranges based on the text values in column A, so
- * don't change these</li>
  * </ul>
  * 
  * @author gmcarstairs
  */
-// this is a long running test so normally left disabled
+// this is a long running test (c 1 hr) so normally left disabled
 @Test(enabled = false)
 public class TimingTests
 {
@@ -78,24 +76,42 @@ public class TimingTests
    */
   static final int WARMUPS = 3;
 
+  /*
+   * set true to log raw data and averages, false to 
+   * log average and stderr of 10 iterations of each test
+   */
+  static final boolean LOG_RAW_DATA = false;
+
   private Random rand;
 
   /*
-   * output of averages of REPEAT iterations
-   * for selected tests and sizes N;
-   * printing these out together at the end just makes them
+   * if logging raw data values, collect averages here, and
+   * print them out together at the end, to make them
    * easier to select as graph ranges in Excel
    */
-  StringBuilder averages;
+  private StringBuilder averages;
 
+  /**
+   * Prints system information and column headings
+   */
   @BeforeClass
   public void setUp()
   {
     rand = new Random(RANDOM_SEED);
     averages = new StringBuilder(2345);
-    System.out.println("Test\tsize\titeration\tms");
+    System.out
+            .println("Java version: " + System.getProperty("java.version"));
+    System.out.println(System.getProperty("os.arch") + " "
+            + System.getProperty("os.name") + " "
+            + System.getProperty("os.version") + "\n");
+    System.out.println(
+            "Test\tsize N\titeration\tms\tN/ms\tms stderr\trate stderr");
   }
 
+  /**
+   * Logs the accumulated test averages at the end (if we have been logging raw
+   * data)
+   */
   @AfterClass
   public void tearDown()
   {
@@ -110,7 +126,8 @@ public class TimingTests
   {
     for (int j = 1; j <= 5; j++)
     {
-      int count = j * 100 * 1000; // 200K - 500K
+      int count = j * 100 * 1000; // 100K - 500K
+      double[] data = new double[REPEATS];
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> ranges = generateIntervals(count);
@@ -119,31 +136,43 @@ public class TimingTests
         long elapsed = System.currentTimeMillis() - now;
         if (i >= WARMUPS)
         {
-          System.out.println(
-                  String.format("%s\t%d\t%d\t%d", "NCList bulk load", count,
-                          (i + 1 - WARMUPS), elapsed));
+          data[i - WARMUPS] = elapsed;
         }
         assertTrue(ncl.isValid());
       }
+      logResults("NCList bulk load", count, data);
     }
   }
 
   /**
-   * Generates a list of <code>count</code> intervals of length 50 in the range
-   * [1, 4*count]
+   * Generates a list of <code>count</code> intervals of length 1-50 in the
+   * range [1, 4*count]
    * 
    * @param count
    * @return
    */
   protected List<Range> generateIntervals(Integer count)
   {
+    return generateIntervals(count, 50);
+  }
+
+  /**
+   * Generates a list of <code>count</code> intervals of length 1:maxLength in
+   * the range [1, 4*count]
+   * 
+   * @param count
+   * @param maxLength
+   * @return
+   */
+  private List<Range> generateIntervals(Integer count, int maxLength)
+  {
     int maxPos = 4 * count;
     List<Range> ranges = new ArrayList<>();
     for (int j = 0; j < count; j++)
     {
       int from = 1 + rand.nextInt(maxPos);
-      int to = from + 50; // 1 + rand.nextInt(maxPos);
-      ranges.add(new Range(Math.min(from, to), Math.max(from, to)));
+      int to = from + rand.nextInt(maxLength);
+      ranges.add(new Range(from, to));
     }
     return ranges;
   }
@@ -155,7 +184,7 @@ public class TimingTests
   {
     for (int j = 1; j <= 5; j++)
     {
-      int count = j * 100 * 1000; // 200K - 500K
+      int count = j * 100 * 1000; // 100K - 500K
       loadNclist(count, false, "NCList incr");
     }
   }
@@ -169,16 +198,20 @@ public class TimingTests
     int[] counts = { 100 * 1000, 500 * 1000 };
     for (int count : counts)
     {
-      for (int i = 0; i < REPEATS; i++)
+      double[] data = new double[REPEATS];
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> simple = new ArrayList<>();
         List<Range> ranges = generateIntervals(count);
         long now = System.currentTimeMillis();
         simple.addAll(ranges);
         long elapsed = System.currentTimeMillis() - now;
-        System.out.println(String.format("%s\t%d\t%d\t%d",
-                "Naive bulk load", count, (i + 1), elapsed));
+        if (i >= WARMUPS)
+        {
+          data[i - WARMUPS] = elapsed;
+        }
       }
+      logResults("Naive bulk load", count, data);
     }
   }
 
@@ -187,10 +220,14 @@ public class TimingTests
    */
   public void testLoadTime_naiveList_noDuplicates()
   {
-    int[] counts = { 10 * 1000, 100 * 1000, 200 * 1000 };
-    for (int count : counts)
+    /*
+     * N = 100K, 110K, ..., 190K, 200K
+     */
+    for (int j = 0; j <= 100; j += 10)
     {
-      for (int i = 0; i < REPEATS; i++)
+      int count = 1000 * (100 + j);
+      double[] data = new double[REPEATS];
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> simple = new ArrayList<>();
         List<Range> ranges = generateIntervals(count);
@@ -203,9 +240,12 @@ public class TimingTests
           }
         }
         long elapsed = System.currentTimeMillis() - now;
-        System.out.println(String.format("%s\t%d\t%d\t%d",
-                "Naive no duplicates", count, (i + 1), elapsed));
+        if (i >= WARMUPS)
+        {
+          data[i - WARMUPS] = elapsed;
+        }
       }
+      logResults("Naive no duplicates", count, data);
     }
   }
 
@@ -217,7 +257,7 @@ public class TimingTests
   {
     for (int j = 1; j <= 5; j++)
     {
-      int count = j * 100 * 1000; // 200K - 500K
+      int count = j * 100 * 1000; // 100K - 500K
       loadNclist(count, true, "NCList no duplicates");
     }
   }
@@ -234,7 +274,8 @@ public class TimingTests
   private void loadNclist(Integer count, boolean allowDuplicates,
           String testName)
   {
-    for (int i = 0; i < REPEATS; i++)
+    double[] data = new double[REPEATS];
+    for (int i = 0; i < REPEATS + WARMUPS; i++)
     {
       NCList<Range> ncl = new NCList<>();
       List<Range> ranges = generateIntervals(count);
@@ -247,10 +288,13 @@ public class TimingTests
         }
       }
       long elapsed = System.currentTimeMillis() - now;
-      System.out.println(String.format("%s\t%d\t%d\t%d", testName, count,
-              (i + 1), elapsed));
+      if (i >= WARMUPS)
+      {
+        data[i - WARMUPS] = elapsed;
+      }
       assertTrue(ncl.isValid());
     }
+    logResults(testName, count, data);
   }
 
   /**
@@ -259,17 +303,15 @@ public class TimingTests
   public void testQueryTime_nclist()
   {
     /*
-     * below N=20K, measured time is <10ms so prone to noise
+     * N = 100K, ... 1000K
      */
-    int[] thousands = { 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400,
-        500 };
-    for (int k : thousands)
+    for (int k = 1; k <= 10; k++)
     {
-      int count = k * 1000;
-      long total = 0;
+      int count = k * 100 * 1000;
+      double[] data = new double[REPEATS];
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
-        List<Range> ranges = generateIntervals(count);
+        List<Range> ranges = generateIntervals(count, 1);
         NCList<Range> ncl = new NCList<>(ranges);
 
         List<Range> queries = generateIntervals(count);
@@ -281,16 +323,63 @@ public class TimingTests
         long elapsed = System.currentTimeMillis() - now;
         if (i >= WARMUPS)
         {
-          total += elapsed;
-          System.out.println(
-                  String.format("%s\t%d\t%d\t%d", "NCList query", count,
-                          (i + 1 - WARMUPS), elapsed));
+          data[i - WARMUPS] = elapsed;
         }
         assertTrue(ncl.isValid());
       }
-      averages.append(String.format("%s\t%d\t%d\t%.1f\n",
-              "NCList query avg",
-              count, 0, total / (float) REPEATS));
+      logResults("NCList query", count, data);
+    }
+  }
+
+  /**
+   * Computes mean and standard error for an array of values and appends values
+   * to what will be the console output
+   * 
+   * @param testName
+   * @param count
+   * @param data
+   */
+  private void logResults(String testName, int count, double[] data)
+  {
+    /*
+     * compute the rates count/data e.g. queries per millisecond
+     */
+    double[] rate = new double[data.length];
+    double totRate = 0D;
+    for (int i = 0; i < data.length; i++)
+    {
+      rate[i] = data[i] == 0 ? 0D : count / data[i];
+      totRate += rate[i];
+    }
+
+    double totRaw = 0d;
+    for (int i = 0; i < data.length; i++)
+    {
+      totRaw += data[i];
+      if (LOG_RAW_DATA)
+      {
+        String line = String.format("%s\t%d\t%.0f\t%.1f", testName, count,
+                data[i], rate[i]);
+        System.out.println(line);
+      }
+    }
+
+    /*
+     * calculate mean and standard error of the raw data
+     */
+    double mean = totRaw / data.length;
+    double stderr = standardError(data, mean);
+    double rateMean = totRate / data.length;
+    double rateStderr = standardError(rate, rateMean);
+    String line = String.format("%s\t%d\t%d\t%.1f\t%.1f\t%.2f\t%.2f",
+            testName, count, 0, mean, rateMean, stderr, rateStderr);
+    if (LOG_RAW_DATA)
+    {
+      averages.append(line);
+    }
+    else
+    {
+      System.out.println(line);
     }
   }
 
@@ -301,8 +390,9 @@ public class TimingTests
   {
     for (int j = 2; j <= 6; j++)
     {
-      int count = j * 10 * 1000; // 10K - 50K
-      for (int i = 0; i < REPEATS; i++)
+      int count = j * 10 * 1000; // 20K - 60K
+      double[] data = new double[REPEATS];
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> ranges = generateIntervals(count);
 
@@ -313,9 +403,12 @@ public class TimingTests
           findOverlaps(ranges, q);
         }
         long elapsed = System.currentTimeMillis() - now;
-        System.out.println(String.format("%s\t%d\t%d\t%d", "Naive query",
-                count, (i + 1), elapsed));
+        if (i >= WARMUPS)
+        {
+          data[i - WARMUPS] = elapsed;
+        }
       }
+      logResults("Naive query", count, data);
     }
   }
 
@@ -351,7 +444,9 @@ public class TimingTests
   private void loadIntervalStore(Integer count, boolean allowDuplicates,
           String testName)
   {
-    for (int i = 0; i < REPEATS; i++)
+    double[] data = new double[REPEATS];
+
+    for (int i = 0; i < REPEATS + WARMUPS; i++)
     {
       IntervalStore<Range> ncl = new IntervalStore<>();
       List<Range> ranges = generateIntervals(count);
@@ -364,10 +459,13 @@ public class TimingTests
         }
       }
       long elapsed = System.currentTimeMillis() - now;
-      System.out.println(String.format("%s\t%d\t%d\t%d", testName, count,
-              (i + 1), elapsed));
+      if (i >= WARMUPS)
+      {
+        data[i - WARMUPS] = elapsed;
+      }
       assertTrue(ncl.isValid());
     }
+    logResults(testName, count, data);
   }
 
   /**
@@ -378,22 +476,20 @@ public class TimingTests
   {
     for (int j = 1; j <= 5; j++)
     {
-      int count = j * 100 * 1000; // 200K - 500K
+      int count = j * 100 * 1000; // 100K - 500K
+      double[] data = new double[REPEATS];
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> ranges = generateIntervals(count);
         long now = System.currentTimeMillis();
-        IntervalStore<Range> ncl = new IntervalStore<>(ranges);
+        new IntervalStore<>(ranges);
         long elapsed = System.currentTimeMillis() - now;
         if (i >= WARMUPS)
         {
-          System.out.println(
-                  String.format("%s\t%d\t%d\t%d",
-                          "IntervalStore bulk load",
-                          count, (i + 1 - WARMUPS), elapsed));
+          data[i - WARMUPS] = elapsed;
         }
-        assertTrue(ncl.isValid());
       }
+      logResults("IntervalStore bulk load", count, data);
     }
   }
 
@@ -405,7 +501,7 @@ public class TimingTests
   {
     for (int j = 1; j <= 5; j++)
     {
-      int count = j * 100 * 1000; // 200K - 500K
+      int count = j * 100 * 1000; // 100K - 500K
       loadIntervalStore(count, false, "IntervalStore incr");
     }
   }
@@ -418,7 +514,7 @@ public class TimingTests
   {
     for (int j = 1; j <= 5; j++)
     {
-      int count = j * 100 * 1000; // 200K - 500K
+      int count = j * 100 * 1000; // 100K - 500K
       loadIntervalStore(count, true, "IntervalStore no duplicates");
     }
   }
@@ -428,16 +524,16 @@ public class TimingTests
    */
   public void testQueryTime_intervalstore()
   {
-    for (int k = 2; k <= 10; k++)
+    /*
+     * N = 100K, ... 1000K
+     */
+    for (int k = 1; k <= 10; k++)
     {
-      /*
-       * N is 200K, ... 1000K
-       */
       int count = k * 100 * 1000;
-      long total = 0L;
+      double[] data = new double[REPEATS];
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
-        List<Range> ranges = generateIntervals(count);
+        List<Range> ranges = generateIntervals(count, 1);
         IntervalStore<Range> ncl = new IntervalStore<>(ranges);
   
         List<Range> queries = generateIntervals(count);
@@ -449,16 +545,11 @@ public class TimingTests
         long elapsed = System.currentTimeMillis() - now;
         if (i >= WARMUPS)
         {
-          total += elapsed;
-          System.out.println(
-                  String.format("%s\t%d\t%d\t%d", "IntervalStore query",
-                          count, (i + 1 - WARMUPS), elapsed));
+          data[i - WARMUPS] = elapsed;
         }
         assertTrue(ncl.isValid());
       }
-      averages.append(
-              String.format("%s\t%d\t%d\t%.1f\n", "IntervalStore query avg",
-                      count, 0, total / (float) REPEATS));
+      logResults("IntervalStore query", count, data);
     }
   }
 
@@ -468,16 +559,16 @@ public class TimingTests
   public void testRemoveTime_intervalstore()
   {
     /*
-     * time deleting 1000 entries from stores of various sizes N
+     * time to delete 1000 entries from stores of various sizes N
      */
     final int deleteCount = 1000;
-    for (int k = 2; k <= 10; k++)
+    for (int k = 2; k <= 30; k++)
     {
       /*
-       * N = 200K, ..., 1000K
+       * N = 200K, 300K, ...
        */
       int count = k * 100 * 1000;
-      long total = 0L;
+      double[] data = new double[REPEATS];
       for (int i = 0; i < REPEATS + WARMUPS; i++)
       {
         List<Range> ranges = generateIntervals(count);
@@ -496,17 +587,117 @@ public class TimingTests
         long elapsed = System.currentTimeMillis() - now;
         if (i >= WARMUPS)
         {
-          total += elapsed;
-          System.out.println(
-                  String.format("%s\t%d\t%d\t%d", "IntervalStore remove",
-                          count, (i + 1 - WARMUPS), elapsed));
+          data[i - WARMUPS] = elapsed;
         }
         assertTrue(ncl.isValid());
       }
-      averages.append(
-              String.format("%s\t%d\t%d\t%.1f\n",
-                      "IntervalStore remove avg",
-                      count, 0, total / (float) REPEATS));
+      logResults("IntervalStore remove", count, data);
     }
+  }
+
+  /**
+   * Timing tests for deleting from an NCList
+   */
+  public void testRemoveTime_nclist()
+  {
+    /*
+     * time deleting 1000 entries from stores of various sizes N
+     */
+    final int deleteCount = 1000;
+    for (int k = 2; k <= 30; k++)
+    {
+      /*
+       * N = 200K, ..., 30000K
+       */
+      int count = k * 100 * 1000;
+      double[] data = new double[REPEATS];
+
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
+      {
+        List<Range> ranges = generateIntervals(count);
+        NCList<Range> ncl = new NCList<>(ranges);
+  
+        /*
+         * remove intervals picked pseudo-randomly; attempts to remove the
+         * same interval may fail but that doesn't affect the test timings
+         */
+        long now = System.currentTimeMillis();
+        for (int j = 0; j < deleteCount; j++)
+        {
+          Range toDelete = ranges.get(this.rand.nextInt(count));
+          ncl.remove(toDelete);
+        }
+        long elapsed = System.currentTimeMillis() - now;
+        if (i >= WARMUPS)
+        {
+          data[i - WARMUPS] = elapsed;
+        }
+        assertTrue(ncl.isValid());
+      }
+      logResults("NCList remove", count, data);
+    }
+  }
+
+  /**
+   * A sanity check that ArrayList.remove is O(N) (it is)
+   */
+  public void testRemove_ArrayList()
+  {
+    final int deleteCount = 1000;
+    for (int k = 2; k <= 20; k++)
+    {
+      /*
+       * N = 200K, ..., 2000K
+       */
+      int count = k * 100 * 1000;
+      double[] data = new double[REPEATS];
+
+      for (int i = 0; i < REPEATS + WARMUPS; i++)
+      {
+        List<Range> ranges = generateIntervals(count);
+        int[] toDelete = new int[deleteCount];
+        for (int j = 0; j < deleteCount; j++)
+        {
+          toDelete[j] = this.rand.nextInt(count - deleteCount);
+        }
+
+        /*
+         * remove list entries picked pseudo-randomly
+         */
+        long now = System.currentTimeMillis();
+        for (int index : toDelete)
+        {
+          ranges.remove(index);
+        }
+        long elapsed = System.currentTimeMillis() - now;
+        if (i >= WARMUPS)
+        {
+          data[i - WARMUPS] = elapsed;
+        }
+      }
+      logResults("ArrayList remove", count, data);
+    }
+  }
+
+  /**
+   * Computes the standard error of a data set
+   * 
+   * @param data
+   * @param mean
+   * @return
+   */
+  private double standardError(double[] data, double mean)
+  {
+    double sum = 0;
+    int n = data.length;
+    for (int i = 0; i < n; i++)
+    {
+      double diff = data[i] - mean;
+      sum = sum + diff * diff;
+    }
+    double stdev = Math.sqrt(sum / (n - 1));
+    double stderr = stdev / Math.sqrt(n);
+
+    return stderr;
   }
 }
