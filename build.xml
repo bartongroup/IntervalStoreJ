@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<project name="IntervalStoreJ" default="build-jars">
+	<target name="build-jars">
+		<delete file="./jars/intervalstore.jar" />
+		<delete file="./jars/intervalstore-src.jar" />
+		<jar destfile="./jars/intervalstore.jar" basedir="./bin" includes="**/*.class" 
+			excludes="**/*Test.class,**/SimpleFeature.class, junit/**/*.class" />
+		<jar destfile="./jars/intervalstore-src.jar" basedir="./src" includes="**/*.java" />
+	</target>
+</project>
