@@ -34,7 +34,7 @@ package intervalstore.impl;
 import intervalstore.api.IntervalI;
 
 /**
- * A simplified feature instance sufficient for unit test purposes.
+ * A simplified feature instance sufficient for unit test purposes
  */
 public class SimpleFeature implements IntervalI
 {
@@ -44,13 +44,25 @@ public class SimpleFeature implements IntervalI
 
   private String description;
 
-  SimpleFeature(int from, int to, String desc)
+  /**
+   * Constructor
+   * 
+   * @param from
+   * @param to
+   * @param desc
+   */
+  public SimpleFeature(int from, int to, String desc)
   {
     begin = from;
     end = to;
     description = desc;
   }
 
+  /**
+   * Copy constructor
+   * 
+   * @param sf1
+   */
   public SimpleFeature(SimpleFeature sf1)
   {
     this(sf1.begin, sf1.end, sf1.description);

@@ -31,8 +31,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package intervalstore.api;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 public interface IntervalI
 {
+  /**
+   * a comparator for sorting intervals by start position ascending
+   */
+  static Comparator<? super IntervalI> FORWARD_STRAND = new Comparator<IntervalI>()
+  {
+    @Override
+    public int compare(IntervalI o1, IntervalI o2)
+    {
+      return Integer.compare(o1.getBegin(), o2.getBegin());
+    }
+  };
+
+  /**
+   * a comparator for sorting intervals by end position descending
+   */
+  static Comparator<? super IntervalI> REVERSE_STRAND = new Comparator<IntervalI>()
+  {
+    @Override
+    public int compare(IntervalI o1, IntervalI o2)
+    {
+      return Integer.compare(o2.getEnd(), o1.getEnd());
+    }
+  };
+
   int getBegin();
 
   int getEnd();
@@ -83,5 +111,19 @@ public interface IntervalI
       return i.getBegin() <= getEnd();
     }
     return true; // i internal to this
+  }
+
+  /**
+   * Sorts the list by start position ascending (if forwardString==true), or by
+   * end position descending
+   * 
+   * @param intervals
+   * @param forwardStrand
+   */
+  static void sortIntervals(List<? extends IntervalI> intervals,
+          final boolean forwardStrand)
+  {
+    Collections.sort(intervals,
+            forwardStrand ? FORWARD_STRAND : REVERSE_STRAND);
   }
 }
