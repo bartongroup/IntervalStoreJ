@@ -4,7 +4,7 @@ A Java read-write implementation of the Nested Containment List data structure, 
   
 _Alexander V. Alekseyenko, Christopher J. Lee; Nested Containment List (NCList): a new algorithm for accelerating interval query of genome alignment and interval databases, Bioinformatics, Volume 23, Issue 11, 1 June 2007, Pages 1386–1393, https://doi.org/10.1093/bioinformatics/btl647_
 
-NCList provides efficient lookup of intervals overlapping a given range in time (_O(log N)_ where N is the number of intervals stored).
+NCList provides efficient lookup of intervals overlapping a given range in time (_O(M log N)_ where N is the number of intervals stored), and M the number of overlaps found.
 
 Key features of `IntervalStore`
 * is parameterised by `<T extends IntervalI>`
