@@ -1,7 +1,7 @@
 /*
 BSD 3-Clause License
 
-Copyright (c) 2018, Geoff Barton's Computational Biology Group
+Copyright (c) 2018, Mungo Carstairs
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
