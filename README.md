@@ -24,3 +24,6 @@ To use IntervalStore in your application:
 Unit tests give 99% coverage of the code. 
 These require the TestNG library, available from the [Eclipse Marketplace](https://marketplace.eclipse.org/content/testng-eclipse), 
 or <https://testng.org/doc/download.html>.
+
+If you use IntervalStoreJ, please cite:
+Carstairs et al, (2019), "IntervalStoreJ: A Reusable Read-Write Java Implementation of Nested Containment List" (in preparation).
