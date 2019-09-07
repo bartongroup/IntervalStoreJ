@@ -31,38 +31,72 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package intervalstore.api;
 
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 
 public interface IntervalI
 {
   /**
-   * a comparator for sorting intervals by start position ascending
+   * Compares intervals by start position ascending and end position descending
    */
-  static Comparator<? super IntervalI> FORWARD_STRAND = new Comparator<IntervalI>()
+  static Comparator<? super IntervalI> COMPARE_BEGIN_ASC_END_DESC = new Comparator<IntervalI>()
   {
     @Override
     public int compare(IntervalI o1, IntervalI o2)
     {
-      return Integer.compare(o1.getBegin(), o2.getBegin());
+      int ret = Integer.signum(o1.getBegin() - o2.getBegin());
+      return (ret == 0 ? Integer.signum(o2.getEnd() - o1.getEnd()) : ret);
     }
   };
 
   /**
-   * a comparator for sorting intervals by end position descending
+   * Compares intervals by start position ascending and end position ascending
    */
-  static Comparator<? super IntervalI> REVERSE_STRAND = new Comparator<IntervalI>()
+  static Comparator<? super IntervalI> COMPARE_BEGIN_ASC_END_ASC = new Comparator<IntervalI>()
   {
     @Override
     public int compare(IntervalI o1, IntervalI o2)
     {
-      return Integer.compare(o2.getEnd(), o1.getEnd());
+      int ret = Integer.signum(o1.getBegin() - o2.getBegin());
+      return (ret == 0 ? Integer.signum(o1.getEnd() - o2.getEnd()) : ret);
     }
   };
 
+  /**
+   * Compares intervals by start position ascending
+   */
+  static Comparator<? super IntervalI> COMPARE_BEGIN_ASC = new Comparator<IntervalI>()
+  {
+    @Override
+    public int compare(IntervalI o1, IntervalI o2)
+    {
+      return Integer.signum(o1.getBegin() - o2.getBegin());
+    }
+  };
+
+  /**
+   * Compares intervals by end position descending
+   */
+  static Comparator<? super IntervalI> COMPARE_END_DESC = new Comparator<IntervalI>()
+  {
+    @Override
+    public int compare(IntervalI o1, IntervalI o2)
+    {
+      return Integer.signum(o2.getEnd() - o1.getEnd());
+    }
+  };
+
+  /**
+   * Answers the start position of the interval
+   * 
+   * @return
+   */
   int getBegin();
 
+  /**
+   * Answers the end position of the interval
+   * 
+   * @return
+   */
   int getEnd();
 
   /**
@@ -90,12 +124,26 @@ public interface IntervalI
             && (i.getBegin() > getBegin() || i.getEnd() < getEnd());
   }
 
+  /**
+   * Answers true if the interval has the same begin and end as this one, else
+   * false
+   * 
+   * @param i
+   * @return
+   */
   default boolean equalsInterval(IntervalI i)
   {
     return i != null && i.getBegin() == getBegin()
             && i.getEnd() == getEnd();
   }
 
+  /**
+   * Answers true if interval i overlaps this one (they share at least one
+   * position), else false
+   * 
+   * @param i
+   * @return
+   */
   default boolean overlapsInterval(IntervalI i)
   {
     if (i == null)
@@ -111,19 +159,5 @@ public interface IntervalI
       return i.getBegin() <= getEnd();
     }
     return true; // i internal to this
-  }
-
-  /**
-   * Sorts the list by start position ascending (if forwardString==true), or by
-   * end position descending
-   * 
-   * @param intervals
-   * @param forwardStrand
-   */
-  static void sortIntervals(List<? extends IntervalI> intervals,
-          final boolean forwardStrand)
-  {
-    Collections.sort(intervals,
-            forwardStrand ? FORWARD_STRAND : REVERSE_STRAND);
   }
 }

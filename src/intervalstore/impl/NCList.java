@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import intervalstore.api.IntervalI;
+import intervalstore.impl.BinarySearcher.Compare;
 
 /**
  * An adapted implementation of NCList as described in the paper
@@ -199,7 +200,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      * sort by start ascending, length descending, so that
      * contained intervals follow their containing interval
      */
-    Collections.sort(ranges, new NCListBuilder<>().getComparator());
+    Collections.sort(ranges, IntervalI.COMPARE_BEGIN_ASC_END_DESC);
 
     int listStartIndex = 0;
 
@@ -488,8 +489,8 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    */
   protected int findFirstOverlap(final long from)
   {
-    return BinarySearcher.findFirst(subranges,
-            val -> val.getEnd() >= from);
+    return BinarySearcher.findFirst(subranges, false, Compare.GE,
+            (int) from);
   }
 
   /**

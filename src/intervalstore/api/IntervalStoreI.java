@@ -34,11 +34,16 @@ package intervalstore.api;
 import java.util.Collection;
 import java.util.List;
 
-import intervalstore.impl.NCList;
-
+/**
+ * An interface describing a store of (possibly overlapping) features which may
+ * be queried to find features which overlap a given start-end range
+ * 
+ * @author gmcarstairs
+ *
+ * @param <T>
+ */
 public interface IntervalStoreI<T extends IntervalI> extends Collection<T>
 {
-
   /**
    * Returns a (possibly empty) list of items whose extent overlaps the given
    * range
@@ -52,6 +57,28 @@ public interface IntervalStoreI<T extends IntervalI> extends Collection<T>
   List<T> findOverlaps(long from, long to);
 
   /**
+   * Returns a (possibly empty) list of items whose extent overlaps the given
+   * range. If the {@code results} parameter is not null, items are appended to
+   * this list and the (possibly extended) list is returned. There is no check
+   * for duplicate entries in the result list.
+   * 
+   * @param from
+   *          start of overlap range (inclusive)
+   * @param to
+   *          end of overlap range (inclusive)
+   * @param result
+   * @return
+   */
+  List<T> findOverlaps(long from, long to, List<T> result);
+
+  /**
+   * Adds the entry to the store, unless {@code allowDuplicates} is false and
+   * the entry is already contained in the store. The test for containment
+   * should match that used in the {@code contains} method.
+   */
+  boolean add(T entry, boolean allowDuplicates);
+
+  /**
    * Returns a string representation of the data where containment is shown by
    * indentation on new lines
    * 
@@ -60,23 +87,10 @@ public interface IntervalStoreI<T extends IntervalI> extends Collection<T>
   String prettyPrint();
 
   /**
-   * Answers true if the data held satisfy the rules of construction of an
-   * IntervalStore, else false.
+   * Answers the depth of nesting of intervals in the store. The precise
+   * definition depends on the implementation.
    * 
    * @return
-   */
-  boolean isValid();
-
-  /**
-   * Answers the level of nesting of intervals in the store, as
-   * <ul>
-   * <li>0 if the store is empty</li>
-   * <li>1 if all intervals are 'top level' (non nested)</li>
-   * <li>else 1 plus the depth of the enclosed NCList</li>
-   * </ul>
-   * 
-   * @return
-   * @see NCList#getDepth()
    */
   int getDepth();
 

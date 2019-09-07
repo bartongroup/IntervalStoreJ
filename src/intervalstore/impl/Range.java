@@ -73,13 +73,8 @@ public class Range implements IntervalI
   }
 
   @Override
-  public boolean equals(Object obj)
+  public boolean equals(Object o)
   {
-    if (obj instanceof Range)
-    {
-      Range r = (Range) obj;
-      return (start == r.start && end == r.end);
-    }
-    return false;
+    return (o instanceof Range) && equalsInterval((Range) o);
   }
 }

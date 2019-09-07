@@ -38,13 +38,15 @@ import java.util.Comparator;
 
 import org.testng.annotations.Test;
 
+import intervalstore.api.IntervalI;
+
 public class NCListBuilderTest
 {
 
   @Test(groups = "Functional")
   public void testCompare()
   {
-    Comparator<Range> comp = new NCListBuilder<Range>().getComparator();
+    Comparator<? super IntervalI> comp = IntervalI.COMPARE_BEGIN_ASC_END_DESC;
 
     // same position, same length
     assertEquals(comp.compare(new Range(10, 20), new Range(10, 20)), 0);
