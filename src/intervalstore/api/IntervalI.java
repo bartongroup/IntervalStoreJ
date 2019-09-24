@@ -43,8 +43,8 @@ public interface IntervalI
     @Override
     public int compare(IntervalI o1, IntervalI o2)
     {
-      int ret = Integer.signum(o1.getBegin() - o2.getBegin());
-      return (ret == 0 ? Integer.signum(o2.getEnd() - o1.getEnd()) : ret);
+      int ret = Integer.compare(o1.getBegin(), o2.getBegin());
+      return (ret == 0 ? Integer.compare(o2.getEnd(), o1.getEnd()) : ret);
     }
   };
 
@@ -56,8 +56,8 @@ public interface IntervalI
     @Override
     public int compare(IntervalI o1, IntervalI o2)
     {
-      int ret = Integer.signum(o1.getBegin() - o2.getBegin());
-      return (ret == 0 ? Integer.signum(o1.getEnd() - o2.getEnd()) : ret);
+      int ret = Integer.compare(o1.getBegin(), o2.getBegin());
+      return (ret == 0 ? Integer.compare(o1.getEnd(), o2.getEnd()) : ret);
     }
   };
 
@@ -69,7 +69,7 @@ public interface IntervalI
     @Override
     public int compare(IntervalI o1, IntervalI o2)
     {
-      return Integer.signum(o1.getBegin() - o2.getBegin());
+      return Integer.compare(o1.getBegin(), o2.getBegin());
     }
   };
 
@@ -81,7 +81,7 @@ public interface IntervalI
     @Override
     public int compare(IntervalI o1, IntervalI o2)
     {
-      return Integer.signum(o2.getEnd() - o1.getEnd());
+      return Integer.compare(o2.getEnd(), o1.getEnd());
     }
   };
 

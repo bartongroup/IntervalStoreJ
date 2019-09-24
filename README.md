@@ -41,6 +41,8 @@ Performance and related enhancements suggested by BobHanson
 * provide an overloaded `IntervalStoreI.add(T o, boolean allowDuplicates)` to allow 'deferred check for contains' in implementations
 * shortcut in `BinarySearcher.findFirst` when adding features in increasing start order
 
+`IntervalStore.add(T)` is now rejects duplicates by default. To allow duplicates, call `IntervalStore.add(T, false)` instead.
+ 
 All comparators are now defined in `IntervalI`.
 
 v1.0 29-Mar-2019

@@ -453,10 +453,7 @@ public class TimingTests
       long now = System.currentTimeMillis();
       for (Range r : ranges)
       {
-        if (allowDuplicates || !ncl.contains(r))
-        {
-          ncl.add(r);
-        }
+        ncl.add(r, allowDuplicates);
       }
       long elapsed = System.currentTimeMillis() - now;
       if (i >= WARMUPS)

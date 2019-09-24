@@ -130,6 +130,14 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   private List<NCNode<T>> subranges;
 
   /**
+   * Default constructor
+   */
+  public NCList()
+  {
+    subranges = new ArrayList<>();
+  }
+
+  /**
    * Constructor given a list of things that are each located on a contiguous
    * interval. Note that the constructor may reorder the list.
    * <p>
@@ -169,14 +177,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     }
 
     size = ranges.size();
-  }
-
-  /**
-   * Default constructor
-   */
-  public NCList()
-  {
-    subranges = new ArrayList<>();
   }
 
   /**
@@ -228,7 +228,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   }
 
   /**
-   * Adds one entry to the stored set
+   * Adds one entry to the stored set, with duplicates allowed
    * 
    * @param entry
    */
