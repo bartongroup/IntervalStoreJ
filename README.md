@@ -27,3 +27,22 @@ or <https://testng.org/doc/download.html>.
 
 If you use IntervalStoreJ, please cite:
 Carstairs et al, (2019), "IntervalStoreJ: A Reusable Read-Write Java Implementation of Nested Containment List" (in preparation).
+
+
+------------------------------------------------------------
+
+
+## Version History
+v1.1 24-Sep-2019 
+
+Performance and related enhancements suggested by BobHanson
+* avoid use of 'capturing lambda' (with object creation) in `BinarySearcher`
+* provide an overloaded `IntervalStoreI.findOverlaps` that accepts a list to add to
+* provide an overloaded `IntervalStoreI.add(T o, boolean allowDuplicates)` to allow 'deferred check for contains' in implementations
+* shortcut in `BinarySearcher.findFirst` when adding features in increasing start order
+
+All comparators are now defined in `IntervalI`.
+
+v1.0 29-Mar-2019
+
+First public release
