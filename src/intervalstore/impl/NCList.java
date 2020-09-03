@@ -285,11 +285,10 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
       if (subrange.equalsInterval(newNode))
       {
         /*
-         * matching interval - insert adjacent
+         * matching interval - look further, so the new interval is added
+         * after any co-located intervals (to preserve order of addition)
          */
         continue;
-        // subranges.add(j, newNode);
-        // return;
       }
 
       if (end < subrange.getBegin() && !enclosing)
