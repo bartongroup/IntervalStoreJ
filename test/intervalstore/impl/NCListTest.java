@@ -435,12 +435,17 @@ public class NCListTest
   }
 
   /**
-   * If intervals have an ambiguous order of containment, the NCList varies
-   * depending on the order in which they are added to it
+   * A test that demonstrates that if intervals have alternative possible
+   * containment hierarchies, the NCList structure varies depending on the order
+   * in which the intervals are added to it
    */
   @Test(groups = "Functional")
-  public void testLoadOrder()
+  public void testNestingDependsOnLoadOrder()
   {
+    /*
+     * some real biological intervals, from larger (enclosing) to smaller;
+     * note transcript and exon have the same start/end range
+     */
     List<SimpleFeature> ranges = new ArrayList<>();
     ranges.add(new SimpleFeature(1, 205602, "gene")); // ENSG00000157764
     ranges.add(new SimpleFeature(187, 90957, "transcript")); // ENST00000469930
@@ -450,29 +455,33 @@ public class NCListTest
     ranges.add(new SimpleFeature(256, 256, "SNV")); // dbSNP151 rs1225976306
 
     /*
-     * add all features at once; initial sort and load results in a nested NCList
+     * add all features at once; initial sort and load gives a nested NCList
+     * with cds (and smaller) intervals nested inside exon
      */
     NCList<SimpleFeature> ncl = new NCList<>(ranges);
     assertEquals(ncl.size(), 6);
     assertEquals(ncl.getDepth(), 5);
-    String asString = "[1:205602:gene [187:90957:transcript, 187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]]]]";
-    assertEquals(ncl.toString(), asString);
+    String expected1 = "[1:205602:gene [187:90957:transcript, 187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]]]]";
+    assertEquals(ncl.toString(), expected1);
 
     /*
-     * add features one at a time, in mixed order - same result as previous
+     * add features one at a time, in mixed order;
+     * this time nested features for cds and SNV are added before transcript;
+     * they become nested under transcript when the latter is added
      */
     ncl = new NCList<>();
-    int[] order = new int[] { 3, 0, 5, 2, 4, 1 };
+    int[] order = new int[] { 3, 0, 5, 1, 4, 2 };
     for (int i : order)
     {
       ncl.add(ranges.get(i));
       assertTrue(ncl.isValid(), "iteration " + i);
     }
-    assertEquals(ncl.toString(), asString);
+    String expected2 = "[1:205602:gene [187:90957:transcript [226:90335:cds [251:260:indel [256:256:SNV]]], 187:90957:exon]]";
+    assertEquals(ncl.toString(), expected2);
 
     /*
      * add features one at a time, from 'small' to 'large' 
-     * - same result apart from ordering of transcript / exon
+     * - exon is added before transcript, and 'captures' (encloses) the smaller invervals
      */
     ncl = new NCList<>();
     order = new int[] { 5, 4, 3, 2, 1, 0 };
@@ -480,13 +489,13 @@ public class NCListTest
     {
       ncl.add(ranges.get(i));
     }
-    String asString2 = "[1:205602:gene [187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]], 187:90957:transcript]]";
-    assertEquals(ncl.toString(), asString2);
+    String expected3 = "[1:205602:gene [187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]], 187:90957:transcript]]";
+    assertEquals(ncl.toString(), expected3);
     assertTrue(ncl.isValid());
 
     /*
      * add features one at a time, from 'large' to 'small'
-     * - same result as previous
+     * - transcript before exon, transcript encloses smaller intervals
      */
     ncl = new NCList<>();
     order = new int[] { 0, 1, 2, 3, 4, 5 };
@@ -494,7 +503,7 @@ public class NCListTest
     {
       ncl.add(ranges.get(i));
     }
-    assertEquals(ncl.toString(), asString2);
+    assertEquals(ncl.toString(), expected2);
     assertTrue(ncl.isValid());
   }
 

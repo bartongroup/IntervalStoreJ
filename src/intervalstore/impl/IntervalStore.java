@@ -229,10 +229,9 @@ public class IntervalStore<T extends IntervalI>
        */
       int insertPosition = BinarySearcher.findFirst(nonNested, true,
               Compare.GE, entry.getBegin());
+
       /*
-       * fail if we detect interval enclosure 
-       * - of the new interval by the one before or after it
-       * - of the next interval by the new one
+       * fail if the new interval is enclosed by the one before it
        */
       if (insertPosition > 0)
       {
@@ -241,7 +240,13 @@ public class IntervalStore<T extends IntervalI>
           return false;
         }
       }
-      if (insertPosition < nonNested.size())
+
+      /*
+       * traverse any co-located intervals and add this one on the end;
+       * fail if we detect interval enclosure of the new interval by 
+       * one after it, or vice versa
+       */
+      while (insertPosition < nonNested.size())
       {
         T following = nonNested.get(insertPosition);
         if (entry.properlyContainsInterval(following)
@@ -249,10 +254,18 @@ public class IntervalStore<T extends IntervalI>
         {
           return false;
         }
+        if (following.equalsInterval(entry))
+        {
+          insertPosition++;
+        }
+        else
+        {
+          break;
+        }
       }
 
       /*
-       * checks passed - add the interval
+       * checks passed - add the interval (after any for the same start-end)
        */
       nonNested.add(insertPosition, entry);
 

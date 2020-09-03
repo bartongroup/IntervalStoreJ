@@ -287,8 +287,9 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
         /*
          * matching interval - insert adjacent
          */
-        subranges.add(j, newNode);
-        return;
+        continue;
+        // subranges.add(j, newNode);
+        // return;
       }
 
       if (end < subrange.getBegin() && !enclosing)

@@ -58,7 +58,9 @@ public class IntervalStoreTest
     assertTrue(store.isValid());
     assertTrue(store.isEmpty());
     assertNull(PA.getValue(store, "nested"));
-    List nonNested = (List) PA.getValue(store, "nonNested");
+    List<SimpleFeature> nonNested = (List<SimpleFeature>) PA
+            .getValue(store,
+            "nonNested");
     assertNotNull(nonNested);
     assertTrue(nonNested.isEmpty());
 
@@ -78,17 +80,17 @@ public class IntervalStoreTest
     assertTrue(store2.isValid());
     assertEquals(store2.size(), 6);
     assertNull(PA.getValue(store2, "nested"));
-    nonNested = (List) PA.getValue(store2, "nonNested");
-    assertNotNull(nonNested);
-    assertEquals(nonNested.size(), 6);
-    assertSame(nonNested.get(0), r1);
-    assertSame(nonNested.get(1), r2);
-    assertSame(nonNested.get(2), r3);
-    assertSame(nonNested.get(3), r4);
+    List<Range> nonNested2 = (List<Range>) PA.getValue(store2, "nonNested");
+    assertNotNull(nonNested2);
+    assertEquals(nonNested2.size(), 6);
+    assertSame(nonNested2.get(0), r1);
+    assertSame(nonNested2.get(1), r2);
+    assertSame(nonNested2.get(2), r3);
+    assertSame(nonNested2.get(3), r4);
     // co-located intervals stay in their original respective order
     // (because Collections.sort() is 'stable')
-    assertSame(nonNested.get(4), r6);
-    assertSame(nonNested.get(5), r5);
+    assertSame(nonNested2.get(4), r6);
+    assertSame(nonNested2.get(5), r5);
   }
 
   @Test(groups = "Functional")
@@ -149,6 +151,44 @@ public class IntervalStoreTest
     // (because Collections.sort() is 'stable')
     assertSame(nonNested.get(3), r6);
     assertSame(nonNested.get(4), r5);
+  }
+
+  @Test(groups = "Functional")
+  public void testFindOverlaps_colocatedNonNested()
+  {
+    IntervalStore<SimpleFeature> store = new IntervalStore<>();
+    SimpleFeature sf1 = add(store, 10, 10, "sf1");
+    SimpleFeature sf2 = add(store, 10, 10, "sf2");
+    SimpleFeature sf3 = add(store, 10, 10, "sf3");
+
+    /*
+     * check same features retrieved, in the order they were added
+     */
+    List<SimpleFeature> overlaps = store.findOverlaps(10, 10);
+    assertEquals(overlaps.size(), 3);
+    assertSame(overlaps.get(0), sf1);
+    assertSame(overlaps.get(1), sf2);
+    assertSame(overlaps.get(2), sf3);
+  }
+
+  @Test(groups = "Functional")
+  public void testFindOverlaps_colocatedNested()
+  {
+    IntervalStore<SimpleFeature> store = new IntervalStore<>();
+    SimpleFeature sf0 = add(store, 5, 15, "sf1");
+    SimpleFeature sf1 = add(store, 10, 10, "sf1");
+    SimpleFeature sf2 = add(store, 10, 10, "sf2");
+    SimpleFeature sf3 = add(store, 10, 10, "sf3");
+
+    /*
+     * check same features retrieved, in the order they were added
+     */
+    List<SimpleFeature> overlaps = store.findOverlaps(10, 10);
+    assertEquals(overlaps.size(), 4);
+    assertSame(overlaps.get(0), sf0);
+    assertSame(overlaps.get(1), sf1);
+    assertSame(overlaps.get(2), sf2);
+    assertSame(overlaps.get(3), sf3);
   }
 
   @Test(groups = "Functional")
@@ -283,7 +323,22 @@ public class IntervalStoreTest
   SimpleFeature add(IntervalStore<SimpleFeature> store, int from,
           int to)
   {
-    SimpleFeature sf1 = new SimpleFeature(from, to, "desc");
+    return add(store, from, to, "desc");
+  }
+
+  /**
+   * Helper method to add a SimpleFeature to an IntervalStore
+   * 
+   * @param store
+   * @param from
+   * @param to
+   * @param description
+   * @return
+   */
+  SimpleFeature add(IntervalStore<SimpleFeature> store, int from, int to,
+          String description)
+  {
+    SimpleFeature sf1 = new SimpleFeature(from, to, description);
     store.add(sf1);
     return sf1;
   }

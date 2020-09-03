@@ -8,13 +8,13 @@
 	</classpathentry>
 	<classpathentry kind="src" path="test"/>
 	<!-- insert your paths to TestNG libraries here -->
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/bsh-2.0b4.jar"/>
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/guava-base-r03.jar"/>
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/guava-collections-r03.jar"/>
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/jcommander.jar"/>
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/junit-4.12.jar"/>
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/snakeyaml.jar"/>
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/testng-sources.jar"/>
-	<classpathentry kind="lib" path="/Jalview with gradle build/utils/testnglibs/testng.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/bsh-2.0b4.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/guava-base-r03.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/guava-collections-r03.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/jcommander.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/junit-4.12.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/snakeyaml.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/testng-sources.jar"/>
+	<classpathentry kind="lib" path="/jalview/utils/testnglibs/testng.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

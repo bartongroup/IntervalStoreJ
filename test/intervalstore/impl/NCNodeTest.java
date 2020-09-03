@@ -173,7 +173,7 @@ public class NCNodeTest
     assertTrue(node.isValid());
 
     // expect an empty NCList to be nulled
-    ((NCList) PA.getValue(node, "subregions")).clear();
+    ((NCList<Range>) PA.getValue(node, "subregions")).clear();
     assertFalse(node.isValid());
   }
 
