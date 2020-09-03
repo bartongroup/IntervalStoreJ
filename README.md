@@ -33,6 +33,10 @@ Carstairs et al, (2019), "IntervalStoreJ: A Reusable Read-Write Java Implementat
 
 
 ## Version History
+v1.2 03-Sep-2020 
+
+Enhanced for Issue #6: find co-located features in the same order as they were added
+
 v1.1 24-Sep-2019 
 
 Performance and related enhancements suggested by BobHanson
